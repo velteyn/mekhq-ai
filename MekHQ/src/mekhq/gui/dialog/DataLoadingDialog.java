@@ -384,8 +384,14 @@ public class DataLoadingDialog extends AbstractMHQDialogBasic implements Propert
                     String factionCode = proposal.startingFactionCode;
                     if (factionCode != null) {
                         mekhq.campaign.universe.Faction f = Factions.getInstance().getFaction(factionCode);
-                        if (f != null) {
+                        // The engine returns a dummy faction with no name if it can't find the code.
+                        // We check if it has a valid short name to verify it actually exists.
+                        if (f != null && !f.getShortName().equals(mekhq.campaign.universe.Faction.DEFAULT_CODE)) {
                             campaign.setFaction(f);
+                        } else {
+                            // Fallback to Mercenary if AI gave an invalid code
+                            campaign.setFaction(Factions.getInstance().getDefaultFaction());
+                            LOGGER.warn("AI proposed invalid faction code '" + factionCode + "'. Defaulting to MERC.");
                         }
                     }
                 } else {

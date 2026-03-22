@@ -77,7 +77,8 @@ public class AIService {
     public CompletableFuture<MissionProposal> generateMission(String userPrompt, String context) {
         String fullPrompt = "Context: " + context + "\n\nUser Request: " + userPrompt + 
             "\n\nGenerate a mission proposal in JSON format with the following fields: " +
-            "title, briefing (narrative), missionType (one of the enums), employerCode, enemyCode, planetName (canon planet name), difficulty (1-10), lengthWeeks.";
+            "title, briefing (a detailed narrative explaining WHY we are fighting, WHO hired us, WHAT the specific objective is, and ANY notable lore/historical context based on the current year and location), " +
+            "missionType (one of the enums), employerCode, enemyCode, planetName (canon planet name), difficulty (1-10), lengthWeeks.";
 
         return callLLM(fullPrompt, MissionProposal.class);
     }
@@ -86,7 +87,7 @@ public class AIService {
         String fullPrompt = "User Request: " + userPrompt + 
             "\n\nGenerate a new campaign proposal in JSON format with the following fields: " +
             "campaignName (the title of the story), mercenaryUnitName (the actual name of the player's unit), " +
-            "startYear, startingFactionCode (e.g. FS, LC, DC, CC, FWL, CS, PIRATE), " +
+            "startYear, startingFactionCode (use ONLY valid short codes: FS, LC, DC, CC, FWL, CS, WOB, PIR, MERC), " +
             "startingPlanetName, backgroundStory, startingFunds (amount of C-Bills, typically 10000000 to 50000000), " +
             "startingUnits (a list of 4 units, each with modelName (e.g. 'Thunderbolt TDR-5S', 'Shadow Hawk SHD-2H', 'Stinger STG-3G'), " +
             "pilotName, pilotSkills (e.g. 4/5), and backstory), " +

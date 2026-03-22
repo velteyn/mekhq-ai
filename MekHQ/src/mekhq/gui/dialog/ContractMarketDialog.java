@@ -557,10 +557,35 @@ public class ContractMarketDialog extends JDialog {
                 btnAiGenerate.setText("<html><center>AI WORKING...<br>Please wait</center></html>");
                 
                 AIService aiService = new AIService();
-                String context = String.format("Date: %s, Current System: %s, Player Faction: %s",
-                    campaign.getLocalDate(),
-                    campaign.getCurrentSystem().getName(campaign.getLocalDate()),
-                    campaign.getFaction().getFullName(campaign.getGameYear()));
+                
+                // Build a rich context string for the AI
+                StringBuilder contextBuilder = new StringBuilder();
+                contextBuilder.append("Current Year: ").append(campaign.getGameYear()).append("\n");
+                contextBuilder.append("Current Date: ").append(campaign.getLocalDate()).append("\n");
+                contextBuilder.append("Current System: ").append(campaign.getCurrentSystem().getName(campaign.getLocalDate())).append("\n");
+                contextBuilder.append("Player Mercenary Unit Name: ").append(campaign.getName()).append("\n");
+                
+                // Defensive check: Reputation can be null for very new or improperly initialized campaigns
+                if (campaign.getReputation() != null && campaign.getUnitRating() != null) {
+                    contextBuilder.append("Player Unit Rating: ").append(campaign.getUnitRating().getScore()).append("\n");
+                } else {
+                    contextBuilder.append("Player Unit Rating: Unknown (New Unit)\n");
+                }
+                
+                contextBuilder.append("Player Supported Faction: ").append(campaign.getFaction().getFullName(campaign.getGameYear())).append("\n");
+                
+                // Add a brief summary of the unit's forces so the AI knows what kind of missions are appropriate
+                int numMeks = 0, numVehicles = 0, numInfantry = 0, numAero = 0;
+                for (mekhq.campaign.unit.Unit u : campaign.getHangar().getUnits()) {
+                    if (u.getEntity().isMek()) numMeks++;
+                    else if (u.getEntity().getUnitType() == megamek.common.units.UnitType.TANK) numVehicles++;
+                    else if (u.getEntity().isInfantry()) numInfantry++;
+                    else if (u.getEntity().isAero()) numAero++;
+                }
+                contextBuilder.append(String.format("Player Forces: %d Mechs, %d Vehicles, %d Infantry, %d Aerospace\n", 
+                    numMeks, numVehicles, numInfantry, numAero));
+
+                String context = contextBuilder.toString();
                 
                 aiService.generateMission(prompt, context)
                     .thenAccept(proposal -> SwingUtilities.invokeLater(() -> {
