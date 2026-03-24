@@ -127,6 +127,9 @@ import mekhq.campaign.unit.Unit;
 import mekhq.campaign.universe.Faction;
 import mekhq.campaign.universe.Factions;
 import mekhq.campaign.universe.factionStanding.FactionStandings;
+import mekhq.service.ai.AIHelper;
+import mekhq.service.ai.AIService;
+import mekhq.service.ai.MissionProposal;
 import mekhq.gui.adapter.ScenarioTableMouseAdapter;
 import mekhq.gui.baseComponents.immersiveDialogs.ImmersiveDialogNotification;
 import mekhq.gui.baseComponents.immersiveDialogs.ImmersiveDialogSimple;
@@ -182,6 +185,8 @@ public final class BriefingTab extends CampaignGuiTab {
     private RoundedJButton btnClearAssignedUnits;
     private RoundedJButton btnResolveScenario;
     private RoundedJButton btnAutoResolveScenario;
+    private RoundedJButton btnAiDebrief;
+    private RoundedJButton btnGenerateStoryArc;
 
     private ScenarioTableModel scenarioModel;
 
@@ -364,6 +369,17 @@ public final class BriefingTab extends CampaignGuiTab {
         btnClearAssignedUnits.addActionListener(ev -> clearAssignedUnits());
         btnClearAssignedUnits.setEnabled(false);
         panScenarioButtons.add(btnClearAssignedUnits);
+
+        btnAiDebrief = new RoundedJButton("AI AAR");
+        btnAiDebrief.setToolTipText("Generate an AI After-Action Report for a resolved scenario");
+        btnAiDebrief.addActionListener(ev -> generateAiDebrief());
+        btnAiDebrief.setEnabled(false);
+        panScenarioButtons.add(btnAiDebrief);
+
+        btnGenerateStoryArc = new RoundedJButton("Generate AI Story Arc");
+        btnGenerateStoryArc.setToolTipText("Generate a linked 3-mission story arc using AI");
+        btnGenerateStoryArc.addActionListener(ev -> generateStoryArc());
+        panScenarioButtons.add(btnGenerateStoryArc);
 
         scrollScenarioView = new FastJScrollPane();
         scrollScenarioView.setBorder(RoundedLineBorder.createRoundedLineBorder());
@@ -1296,6 +1312,96 @@ public final class BriefingTab extends CampaignGuiTab {
     }
 
 
+    private void generateStoryArc() {
+        if (getCampaign() == null) {
+            return;
+        }
+
+        String backstory = MekHQ.getMHQOptions().getCampaignBackstory();
+        boolean hasBackstory = backstory != null && !backstory.trim().isEmpty();
+
+        String message = hasBackstory 
+            ? "Your Campaign Backstory is loaded. Enter an optional suggestion or sub-plot for the AI (leave blank to use only the background):"
+            : "Enter a theme or prompt for your AI Story Arc:";
+        
+        String userPrompt = JOptionPane.showInputDialog(getFrame(), 
+            message, 
+            "Generate AI Story Arc", 
+            JOptionPane.QUESTION_MESSAGE);
+
+        // If user canceled the dialog
+        if (userPrompt == null) {
+            return;
+        }
+
+        btnGenerateStoryArc.setEnabled(false);
+        btnGenerateStoryArc.setText("<html><center>AI THINKING...<br>Generating Arcs</center></html>");
+
+        AIService aiService = new AIService();
+        
+        StringBuilder contextBuilder = new StringBuilder();
+        contextBuilder.append("Current Year: ").append(getCampaign().getGameYear()).append("\n");
+        contextBuilder.append("Mercenary Unit Name: ").append(getCampaign().getName()).append("\n");
+        contextBuilder.append("Faction: ").append(getCampaign().getFaction().getFullName(getCampaign().getGameYear())).append("\n");
+        contextBuilder.append("Current Location: ").append(getCampaign().getCurrentSystem().getPrimaryPlanet().getName(getCampaign().getLocalDate())).append("\n");
+
+        aiService.generateStoryArc(userPrompt, contextBuilder.toString(), backstory != null ? backstory : "")
+            .thenAccept(arc -> SwingUtilities.invokeLater(() -> {
+                btnGenerateStoryArc.setEnabled(true);
+                btnGenerateStoryArc.setText("Generate AI Story Arc");
+                
+                StringBuilder sb = new StringBuilder();
+                sb.append("<html><b>AI STORY ARC: ").append(arc.title).append("</b><br><br>");
+                sb.append("<i>").append(arc.description).append("</i><br><br>");
+                sb.append("Missions Generated:<br>");
+                for (int i = 0; i < arc.missions.size(); i++) {
+                    sb.append(i + 1).append(". ").append(arc.missions.get(i).title).append("<br>");
+                }
+                sb.append("<br>Would you like to add these missions to your campaign?</html>");
+
+                int choice = JOptionPane.showConfirmDialog(getFrame(), sb.toString(), "AI Arc Generated", JOptionPane.YES_NO_OPTION);
+                if (choice == JOptionPane.YES_OPTION) {
+                    // Check for existing AI missions to "trash" them as requested
+                    java.util.List<mekhq.campaign.mission.Mission> toRemove = new java.util.ArrayList<>();
+                    for (mekhq.campaign.mission.Mission m : getCampaign().getMissions()) {
+                        if (m.getDescription() != null && m.getDescription().contains("<!-- AI_ARC_MISSION -->")) {
+                            // Only trash if it's not success/failed yet
+                            if (!m.getStatus().isCompleted()) {
+                                toRemove.add(m);
+                            }
+                        }
+                    }
+
+                    if (!toRemove.isEmpty()) {
+                        int cleanup = JOptionPane.showConfirmDialog(getFrame(), 
+                            "I found " + toRemove.size() + " existing AI-generated missions. Should I remove them to keep your campaign clean?",
+                            "Cleanup Old AI Missions", JOptionPane.YES_NO_OPTION);
+                        if (cleanup == JOptionPane.YES_OPTION) {
+                            for (mekhq.campaign.mission.Mission m : toRemove) {
+                                getCampaign().removeMission(m);
+                            }
+                        }
+                    }
+
+                    for (MissionProposal proposal : arc.missions) {
+                        AIHelper.addMissionFromProposal(getCampaign(), proposal);
+                    }
+                    JOptionPane.showMessageDialog(getFrame(), "Missions added successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
+                }
+            }))
+            .exceptionally(ex -> {
+                SwingUtilities.invokeLater(() -> {
+                    btnGenerateStoryArc.setEnabled(true);
+                    btnGenerateStoryArc.setText("Generate AI Story Arc");
+                    JOptionPane.showMessageDialog(getFrame(), 
+                        "Failed to generate story arc. Error: " + ex.getMessage(), 
+                        "AI Error", 
+                        JOptionPane.ERROR_MESSAGE);
+                });
+                return null;
+            });
+    }
+
     /**
      * Resolve the selected scenario by proving a MUL file
      */
@@ -1305,6 +1411,73 @@ public final class BriefingTab extends CampaignGuiTab {
             return;
         }
         getCampaign().getApp().resolveScenario(scenario);
+    }
+
+    private void generateAiDebrief() {
+        Scenario scenario = getSelectedScenario();
+        if (scenario == null || getCampaign() == null) {
+            return;
+        }
+
+        int choice = JOptionPane.showConfirmDialog(
+            getFrame(), 
+            "This will use your local AI (via LM Studio) to generate a narrative After-Action Report based on this scenario's results.\n\n" +
+            "Depending on the AI model, this may take a minute or two. Proceed?", 
+            "AI After-Action Debrief", 
+            JOptionPane.YES_NO_OPTION);
+
+        if (choice != JOptionPane.YES_OPTION) {
+            return;
+        }
+
+        btnAiDebrief.setEnabled(false);
+        btnAiDebrief.setText("<html><center>AI WORKING...<br>Please wait</center></html>");
+
+        mekhq.service.ai.AIService aiService = new mekhq.service.ai.AIService();
+        
+        StringBuilder contextBuilder = new StringBuilder();
+        contextBuilder.append("Current Year: ").append(getCampaign().getGameYear()).append("\n");
+        contextBuilder.append("Scenario Date: ").append(scenario.getDate()).append("\n");
+        
+        Mission parentMission = getCampaign().getMission(scenario.getMissionId());
+        if (parentMission != null) {
+            contextBuilder.append("Mission Type: ").append(parentMission.getType()).append("\n");
+        }
+        
+        contextBuilder.append("Player Mercenary Unit Name: ").append(getCampaign().getName()).append("\n");
+        contextBuilder.append("Player Supported Faction: ").append(getCampaign().getFaction().getFullName(getCampaign().getGameYear())).append("\n");
+        
+        StringBuilder resultsBuilder = new StringBuilder();
+        resultsBuilder.append("Scenario Name: ").append(scenario.getName()).append("\n");
+        resultsBuilder.append("Briefing/Description: ").append(scenario.getDescription()).append("\n");
+        resultsBuilder.append("Resolution Status: ").append(scenario.getStatus().toString()).append("\n");
+        resultsBuilder.append("Game Log / Report Data:\n").append(scenario.getReport() != null ? scenario.getReport() : "No detailed report available.").append("\n");
+
+        aiService.generateAfterActionReport(contextBuilder.toString(), resultsBuilder.toString())
+            .thenAccept(report -> SwingUtilities.invokeLater(() -> {
+                btnAiDebrief.setEnabled(true);
+                btnAiDebrief.setText("AI AAR");
+                
+                // Append or replace the report
+                String newReport = "=== AI AFTER-ACTION DEBRIEF ===\n" + report + "\n\n=== ORIGINAL GAME REPORT ===\n" + (scenario.getReport() != null ? scenario.getReport() : "");
+                scenario.setReport(newReport);
+                
+                // Trigger an update so the UI refreshes
+                MekHQ.triggerEvent(new mekhq.campaign.events.scenarios.ScenarioChangedEvent(scenario));
+                
+                JOptionPane.showMessageDialog(getFrame(), "AI After-Action Debrief generated successfully!\nYou can view it in the scenario's Report section.", "Success", JOptionPane.INFORMATION_MESSAGE);
+            }))
+            .exceptionally(ex -> {
+                SwingUtilities.invokeLater(() -> {
+                    btnAiDebrief.setEnabled(true);
+                    btnAiDebrief.setText("AI AAR");
+                    JOptionPane.showMessageDialog(getFrame(), 
+                        "Failed to generate AAR. Make sure your local AI server is running.\nError: " + ex.getMessage(), 
+                        "AI Error", 
+                        JOptionPane.ERROR_MESSAGE);
+                });
+                return null;
+            });
     }
 
     /**
@@ -1988,6 +2161,8 @@ public final class BriefingTab extends CampaignGuiTab {
         btnResolveScenario.setEnabled(canStartGame);
         btnAutoResolveScenario.setEnabled(canStartGame);
         btnPrintRS.setEnabled(canStartGame);
+        
+        btnAiDebrief.setEnabled(!scenario.getStatus().isCurrent());
     }
 
     public void refreshLanceAssignments() {

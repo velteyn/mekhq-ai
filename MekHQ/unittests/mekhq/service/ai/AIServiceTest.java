@@ -71,4 +71,15 @@ public class AIServiceTest {
         assertEquals("OBJECTIVE_RAID", proposal.missionType);
         assertEquals(5, proposal.difficulty);
     }
+
+    @Test
+    public void testParseAARResponse() throws Exception {
+        String json = "{\n" +
+                "  \"reportText\": \"The battle was fierce, but we emerged victorious.\"\n" +
+                "}";
+        
+        AIService.AARResponse aar = aiService.getObjectMapper().readValue(json, AIService.AARResponse.class);
+        assertNotNull(aar);
+        assertEquals("The battle was fierce, but we emerged victorious.", aar.reportText);
+    }
 }

@@ -560,18 +560,12 @@ public class ContractMarketDialog extends JDialog {
                 
                 // Build a rich context string for the AI
                 StringBuilder contextBuilder = new StringBuilder();
+                // Add basic campaign info
                 contextBuilder.append("Current Year: ").append(campaign.getGameYear()).append("\n");
                 contextBuilder.append("Current Date: ").append(campaign.getLocalDate()).append("\n");
                 contextBuilder.append("Current System: ").append(campaign.getCurrentSystem().getName(campaign.getLocalDate())).append("\n");
                 contextBuilder.append("Player Mercenary Unit Name: ").append(campaign.getName()).append("\n");
-                
-                // Defensive check: Reputation can be null for very new or improperly initialized campaigns
-                if (campaign.getReputation() != null && campaign.getUnitRating() != null) {
-                    contextBuilder.append("Player Unit Rating: ").append(campaign.getUnitRating().getScore()).append("\n");
-                } else {
-                    contextBuilder.append("Player Unit Rating: Unknown (New Unit)\n");
-                }
-                
+                contextBuilder.append("Player Unit Rating: ").append(campaign.getUnitRatingText()).append("\n");
                 contextBuilder.append("Player Supported Faction: ").append(campaign.getFaction().getFullName(campaign.getGameYear())).append("\n");
                 
                 // Add a brief summary of the unit's forces so the AI knows what kind of missions are appropriate
@@ -672,65 +666,12 @@ public class ContractMarketDialog extends JDialog {
     }
 
     private void addAiMission(MissionProposal proposal) {
-        LOGGER.info("Adding AI mission: " + proposal.title);
+        mekhq.service.ai.AIHelper.addMissionFromProposal(campaign, proposal);
+        
+        // Update the UI table (since it's a dialog)
         try {
-            AtBContract contract = new AtBContract(proposal.title);
-            contract.setDesc(proposal.briefing);
-            
-            // Map the mission type
-            try {
-                contract.setContractType(AtBContractType.valueOf(proposal.missionType));
-            } catch (Exception e) {
-                contract.setContractType(AtBContractType.GARRISON_DUTY); // Fallback
-            }
-            
-            contract.setEmployerCode(proposal.employerCode, campaign.getGameYear());
-            contract.setEnemyCode(proposal.enemyCode);
-            contract.setDifficulty(proposal.difficulty);
-            contract.setLength(proposal.lengthWeeks);
-            
-            // Set planet
-            Planet targetPlanet = null;
-            if (proposal.planetName != null && !proposal.planetName.isBlank()) {
-                mekhq.campaign.universe.PlanetarySystem sys = Systems.getInstance().getSystemByName(proposal.planetName, campaign.getLocalDate());
-                if (sys != null) {
-                    targetPlanet = sys.getPrimaryPlanet();
-                }
-            }
-            
-            if (targetPlanet == null) {
-                targetPlanet = campaign.getCurrentSystem().getPrimaryPlanet();
-            }
-            if (targetPlanet != null && targetPlanet.getParentSystem() != null) {
-                contract.setSystemId(targetPlanet.getParentSystem().getId());
-            } else {
-                contract.setSystemId("Unknown System");
-            }
-            
-            // Basic initialization
-            contract.initContractDetails(campaign);
-            contract.setDesc(proposal.briefing); // Mission description
-            contract.setPartsAvailabilityLevel(contract.getContractType().calculatePartsAvailabilityLevel());
-            contract.setAtBSharesPercent(campaign.getCampaignOptions().isUseShareSystem() ?
-                                               (Integer) spnSharePct.getValue() :
-                                               0);
-            contract.setStartDate(null);
-            contract.setMRBCFee(payMRBC);
-            contract.setAdvancePct(advance);
-            contract.setSigningBonusPct(signingBonus);
-            contract.calculateContract(campaign);
-            
-            // Add a starting scenario
-            AtBDynamicScenario scenario = new AtBDynamicScenario();
-            scenario.setName("Opening Engagement: " + proposal.title);
-            scenario.setDesc(proposal.briefing);
-            scenario.setDate(campaign.getLocalDate());
-            scenario.setStatus(ScenarioStatus.CURRENT);
-            contract.addScenario(scenario);
-            
-            contractMarket.getContracts().add(contract);
-            
-            // Update UI table
+            List<AtBContract> contracts = campaign.getAtBContracts();
+            AtBContract contract = contracts.get(contracts.size() - 1);
             Vector<String> row = new Vector<>();
             row.add(contract.getEmployerName(campaign.getGameYear()));
             row.add(contract.getEnemyName(campaign.getGameYear()));
@@ -740,7 +681,7 @@ public class ContractMarketDialog extends JDialog {
             if (contract.getSystem() != null) {
                 final JumpPath path = campaign.calculateJumpPath(campaign.getCurrentSystem(), contract.getSystem());
                 days = (int) Math.ceil(path.getTotalTime(contract.getStartDate(),
-                      campaign.getLocation().getTransitTime(), false)); // Assume no command circuit for simplicity
+                      campaign.getLocation().getTransitTime(), false));
             }
             row.add(Integer.toString(days));
             
@@ -752,15 +693,12 @@ public class ContractMarketDialog extends JDialog {
             row.add(contract.getEstimatedTotalProfit(campaign).toAmountAndSymbolString());
             ((DefaultTableModel) tableContracts.getModel()).addRow(row);
             
-            // Selection logic
             tableContracts.setRowSelectionInterval(tableContracts.getRowCount() - 1, 
                 tableContracts.getRowCount() - 1);
             scrollTableContracts.getVerticalScrollBar()
                 .setValue(scrollTableContracts.getVerticalScrollBar().getMaximum());
-                
         } catch (Exception e) {
-            LOGGER.error("Failed to add AI mission", e);
-            JOptionPane.showMessageDialog(this, "Failed to add mission: " + e.getMessage());
+            LOGGER.error("Failed to update UI after adding AI mission", e);
         }
     }
 

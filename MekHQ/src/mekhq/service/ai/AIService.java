@@ -83,6 +83,49 @@ public class AIService {
         return callLLM(fullPrompt, MissionProposal.class);
     }
 
+    public CompletableFuture<String> generateAfterActionReport(String context, String scenarioResult) {
+        String fullPrompt = "Context: " + context + "\n\nScenario Results: " + scenarioResult + 
+            "\n\nGenerate an After-Action Report (AAR) written from the perspective of the mercenary commander or the surviving lance leader. " +
+            "It should be a highly narrative, immersive 2-3 paragraph summary of the battle, mentioning specific casualties, salvage, and the overall outcome. " +
+            "OUTPUT INSTRUCTIONS:\n" +
+            "1. Respond ONLY with a single valid JSON object.\n" +
+            "2. DO NOT include any comments (// or /*) inside the JSON.\n" +
+            "3. DO NOT include any 'Thinking Process', reasoning, preamble, or post-script text.\n" +
+            "4. The JSON must contain exactly one field: 'reportText' (a string).";
+
+        return callLLMWithRetry(fullPrompt, AARResponse.class, 0).thenApply(aar -> aar.reportText);
+    }
+
+    public static class AARResponse {
+        @JsonProperty("reportText") public String reportText;
+    }
+
+    public static class StoryArcProposal {
+        @JsonProperty("title") public String title;
+        @JsonProperty("description") public String description;
+        @JsonProperty("missions") public List<MissionProposal> missions;
+    }
+
+    public CompletableFuture<StoryArcProposal> generateStoryArc(String userPrompt, String context, String campaignBackstory) {
+        StringBuilder fullPrompt = new StringBuilder();
+        fullPrompt.append("Campaign Background Story: ").append(campaignBackstory).append("\n\n");
+        fullPrompt.append("Current Campaign Context: ").append(context).append("\n\n");
+        if (userPrompt != null && !userPrompt.trim().isEmpty()) {
+            fullPrompt.append("User's Specific Suggestion/Focus: ").append(userPrompt).append("\n\n");
+        }
+        
+        fullPrompt.append("Generate a coherent 3-mission story arc in JSON format that is STYLISTICALLY AND NARRATIVELY COHERENT with the Campaign Background Story provided above. ")
+            .append("The arc should represent the next logical step in the unit's journey. ")
+            .append("The story should have a clear beginning, middle, and end. ")
+            .append("Each mission must be linked to the previous one narratively. ")
+            .append("Respond ONLY with a valid JSON object containing: ")
+            .append("title (the name of this campaign arc), ")
+            .append("description (a summary of the overarching plot), ")
+            .append("missions (a list of exactly 3 mission objects, each with: title, briefing, missionType, employerCode, enemyCode, planetName, difficulty, lengthWeeks).");
+
+        return callLLMWithRetry(fullPrompt.toString(), StoryArcProposal.class, 0);
+    }
+
     public CompletableFuture<CampaignProposal> generateCampaign(String userPrompt) {
         String fullPrompt = "User Request: " + userPrompt + 
             "\n\nGenerate a new campaign proposal in JSON format with the following fields: " +
@@ -102,6 +145,7 @@ public class AIService {
 
     private <T> CompletableFuture<T> callLLMWithRetry(String prompt, Class<T> responseType, int retryCount) {
         LOGGER.info("AIService: Preparing LLM call (Attempt " + (retryCount + 1) + ")...");
+        LOGGER.info("AIService: Prompt sent to LLM: \n" + prompt);
         
         // Some models (like older Mistral variants) do not support the "system" role.
         // We combine the system prompt and user prompt into a single "user" message.
@@ -128,11 +172,12 @@ public class AIService {
                 .thenCompose(response -> {
                     if (response.statusCode() != 200) {
                         String error = "LLM API returned status " + response.statusCode() + ": " + response.body();
+                        LOGGER.error("AIService: LLM API error: " + error);
                         return CompletableFuture.failedFuture(new RuntimeException(error));
                     }
                     try {
                         String body = response.body();
-                        LOGGER.debug("AIService: Received raw response: " + body);
+                        LOGGER.info("AIService: Raw response from LLM: \n" + body);
                         ChatResponse chatResponse = objectMapper.readValue(body, ChatResponse.class);
                         if (chatResponse.choices == null || chatResponse.choices.isEmpty()) {
                             return CompletableFuture.failedFuture(new RuntimeException("No choices returned from LLM"));
@@ -140,6 +185,7 @@ public class AIService {
                         Message message = chatResponse.choices.get(0).message;
                         String content = message.content != null ? message.content : "";
                         String reasoning = message.reasoningContent != null ? message.reasoningContent : "";
+                        LOGGER.info("AIService: Content extracted from response: \n" + content);
                         
                         String jsonContent = extractJson(content);
                         if (jsonContent == null) {
@@ -151,8 +197,12 @@ public class AIService {
                             throw new RuntimeException("No valid JSON structure found");
                         }
 
-                        return CompletableFuture.completedFuture(objectMapper.readValue(jsonContent.trim(), responseType));
+                        LOGGER.info("AIService: Sanitized JSON for parsing: \n" + jsonContent);
+                        T result = objectMapper.readValue(jsonContent.trim(), responseType);
+                        LOGGER.info("AIService: Successfully parsed JSON into " + responseType.getSimpleName());
+                        return CompletableFuture.completedFuture(result);
                     } catch (Exception e) {
+                        LOGGER.error("AIService: Deserialization failed on attempt " + (retryCount + 1), e);
                         return CompletableFuture.failedFuture(e);
                     }
                 })

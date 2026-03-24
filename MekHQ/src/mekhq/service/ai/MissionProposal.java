@@ -6,6 +6,8 @@
 package mekhq.service.ai;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import mekhq.service.ai.deserializer.FlexibleIntDeserializer;
 
 /**
  * Represents a mission proposal from the AI.
@@ -17,6 +19,12 @@ public class MissionProposal {
     @JsonProperty("employerCode") public String employerCode; // e.g., "FS"
     @JsonProperty("enemyCode") public String enemyCode; // e.g., "DC"
     @JsonProperty("planetName") public String planetName; // Optional planet name
-    @JsonProperty("difficulty") public int difficulty; // 1-10
-    @JsonProperty("lengthWeeks") public int lengthWeeks;
+    
+    @JsonProperty("difficulty") 
+    @JsonDeserialize(using = FlexibleIntDeserializer.class)
+    public int difficulty; // 1-10
+    
+    @JsonProperty("lengthWeeks") 
+    @JsonDeserialize(using = FlexibleIntDeserializer.class)
+    public int lengthWeeks;
 }
