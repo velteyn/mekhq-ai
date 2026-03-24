@@ -14,7 +14,7 @@ MekHQ is a Java helper program for the [MegaMek](http://megamek.org) game that a
 details, see our [website](http://megamek.org/) and join our [Discord](https://discord.gg/XM54YH9396).
 
 This fork is a mod providing AI LLM lore generation for the people wanting to play but that have very short time (like me).
-This fork make extensive use of AI genertion but attempt to remain in sync with the original project. Since the maitainers decided that this contributiuon is not interesting I will continue here: no pull requests will be asked again. The branch for LLM is "ai-support" , the "main" branch is used to keep it in sync with the original MekHQ project.
+This fork make extensive use of AI genertion but attempt to remain in sync with the original project. Since the maitainers decided that this contribution is not interesting I will continue here: no pull requests will be asked again. The branch for LLM is "ai-support" , the "main" branch is used to keep it in sync with the original MekHQ project.
 
 ## Compiling
 
