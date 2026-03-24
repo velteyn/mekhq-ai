@@ -14,7 +14,7 @@ MekHQ is a Java helper program for the [MegaMek](http://megamek.org) game that a
 details, see their site [website](http://megamek.org/).
 
 This fork is a mod providing AI LLM lore generation for the people wanting to play but that have very short time (like me).
-This fork make extensive use of AI generation but attempt to remain in sync with the original project. Since the maitainers decided that this contribution is not interesting I will continue here: no pull requests will be asked again. The branch for LLM is "ai-support" , the "main" branch is used to keep it in sync with the original MekHQ project.
+This fork make extensive use of AI generation but attempt to remain in sync with the original project. Since the maintainers decided that this contribution is not interesting I will continue here: no pull requests will be asked again. The branch for LLM is "ai-support" , the "main" branch is used to keep it in sync with the original MekHQ project.
 To use AI Features you must install LM Studio (free) and download  Mistral 7b instruct. This is the only supported large language mode for now. 
 I created also a [AI MANUAL](AI_FEATURES_MANUAL.md) for you to read.
 
