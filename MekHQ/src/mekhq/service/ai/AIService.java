@@ -106,16 +106,25 @@ public class AIService {
         @JsonProperty("missions") public List<MissionProposal> missions;
     }
 
-    public CompletableFuture<StoryArcProposal> generateStoryArc(String userPrompt, String context, String campaignBackstory) {
+    public CompletableFuture<StoryArcProposal> generateStoryArc(String userPrompt, String context, String campaignBackstory, List<String> previousMissions) {
         StringBuilder fullPrompt = new StringBuilder();
         fullPrompt.append("Campaign Background Story: ").append(campaignBackstory).append("\n\n");
         fullPrompt.append("Current Campaign Context: ").append(context).append("\n\n");
+        
+        if (previousMissions != null && !previousMissions.isEmpty()) {
+            fullPrompt.append("Previous Missions in this Story Arc:\n");
+            for (int i = 0; i < previousMissions.size(); i++) {
+                fullPrompt.append(i + 1).append(". ").append(previousMissions.get(i)).append("\n");
+            }
+            fullPrompt.append("\n");
+        }
+
         if (userPrompt != null && !userPrompt.trim().isEmpty()) {
             fullPrompt.append("User's Specific Suggestion/Focus: ").append(userPrompt).append("\n\n");
         }
         
-        fullPrompt.append("Generate a coherent 3-mission story arc in JSON format that is STYLISTICALLY AND NARRATIVELY COHERENT with the Campaign Background Story provided above. ")
-            .append("The arc should represent the next logical step in the unit's journey. ")
+        fullPrompt.append("Generate a coherent 3-mission story arc in JSON format that is STYLISTICALLY AND NARRATIVELY COHERENT with the Campaign Background Story and any Previous Missions provided above. ")
+            .append("The arc should represent the NEXT LOGICAL STEP in the unit's journey, building upon the events already established. ")
             .append("The story should have a clear beginning, middle, and end. ")
             .append("Each mission must be linked to the previous one narratively. ")
             .append("Respond ONLY with a valid JSON object containing: ")

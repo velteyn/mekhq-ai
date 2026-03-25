@@ -1345,15 +1345,23 @@ public final class BriefingTab extends CampaignGuiTab {
         contextBuilder.append("Faction: ").append(getCampaign().getFaction().getFullName(getCampaign().getGameYear())).append("\n");
         contextBuilder.append("Current Location: ").append(getCampaign().getCurrentSystem().getPrimaryPlanet().getName(getCampaign().getLocalDate())).append("\n");
 
-        aiService.generateStoryArc(userPrompt, contextBuilder.toString(), backstory != null ? backstory : "")
+        // Gather existing AI missions to provide as context for continuation
+        java.util.List<String> previousMissions = new java.util.ArrayList<>();
+        for (mekhq.campaign.mission.Mission m : getCampaign().getMissions()) {
+            if (m.getDescription() != null && m.getDescription().contains("<!-- AI_ARC_MISSION -->")) {
+                previousMissions.add(m.getName() + " (Status: " + m.getStatus().toString() + ")");
+            }
+        }
+
+        aiService.generateStoryArc(userPrompt, contextBuilder.toString(), backstory != null ? backstory : "", previousMissions)
             .thenAccept(arc -> SwingUtilities.invokeLater(() -> {
                 btnGenerateStoryArc.setEnabled(true);
                 btnGenerateStoryArc.setText("Generate AI Story Arc");
                 
                 StringBuilder sb = new StringBuilder();
-                sb.append("<html><b>AI STORY ARC: ").append(arc.title).append("</b><br><br>");
+                sb.append("<html><b>AI STORY ARC CONTINUATION: ").append(arc.title).append("</b><br><br>");
                 sb.append("<i>").append(arc.description).append("</i><br><br>");
-                sb.append("Missions Generated:<br>");
+                sb.append("New Missions Generated:<br>");
                 for (int i = 0; i < arc.missions.size(); i++) {
                     sb.append(i + 1).append(". ").append(arc.missions.get(i).title).append("<br>");
                 }
@@ -1361,28 +1369,6 @@ public final class BriefingTab extends CampaignGuiTab {
 
                 int choice = JOptionPane.showConfirmDialog(getFrame(), sb.toString(), "AI Arc Generated", JOptionPane.YES_NO_OPTION);
                 if (choice == JOptionPane.YES_OPTION) {
-                    // Check for existing AI missions to "trash" them as requested
-                    java.util.List<mekhq.campaign.mission.Mission> toRemove = new java.util.ArrayList<>();
-                    for (mekhq.campaign.mission.Mission m : getCampaign().getMissions()) {
-                        if (m.getDescription() != null && m.getDescription().contains("<!-- AI_ARC_MISSION -->")) {
-                            // Only trash if it's not success/failed yet
-                            if (!m.getStatus().isCompleted()) {
-                                toRemove.add(m);
-                            }
-                        }
-                    }
-
-                    if (!toRemove.isEmpty()) {
-                        int cleanup = JOptionPane.showConfirmDialog(getFrame(), 
-                            "I found " + toRemove.size() + " existing AI-generated missions. Should I remove them to keep your campaign clean?",
-                            "Cleanup Old AI Missions", JOptionPane.YES_NO_OPTION);
-                        if (cleanup == JOptionPane.YES_OPTION) {
-                            for (mekhq.campaign.mission.Mission m : toRemove) {
-                                getCampaign().removeMission(m);
-                            }
-                        }
-                    }
-
                     for (MissionProposal proposal : arc.missions) {
                         AIHelper.addMissionFromProposal(getCampaign(), proposal);
                     }
