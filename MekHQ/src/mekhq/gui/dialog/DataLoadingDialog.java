@@ -89,6 +89,9 @@ import mekhq.campaign.mission.atb.AtBScenarioModifier;
 import mekhq.campaign.mission.enums.AtBContractType;
 import mekhq.campaign.mission.enums.MissionStatus;
 import mekhq.campaign.mission.enums.ScenarioStatus;
+import mekhq.campaign.force.Formation;
+import mekhq.campaign.force.FormationType;
+import mekhq.campaign.mission.enums.CombatRole;
 import mekhq.campaign.personnel.Bloodname;
 import mekhq.campaign.personnel.Person;
 import mekhq.campaign.personnel.SpecialAbility;
@@ -394,6 +397,12 @@ public class DataLoadingDialog extends AbstractMHQDialogBasic implements Propert
                             LOGGER.warn("AI proposed invalid faction code '" + factionCode + "'. Defaulting to MERC.");
                         }
                     }
+                    
+                    // CRITICAL: Update the preset so the CampaignOptionsDialog doesn't overwrite these values
+                    if (preset != null) {
+                        preset.setDate(campaign.getLocalDate());
+                        preset.setFaction(campaign.getFaction());
+                    }
                 } else {
                     campaign.setLocalDate(DEFAULT_START_DATE);
                 }
@@ -534,6 +543,18 @@ public class DataLoadingDialog extends AbstractMHQDialogBasic implements Propert
                     // 3. Update Unit State
                     try {
                         recalculateCombatTeams(campaign);
+                        
+                        // Set Combat Role and Force Type for generated formations
+                        // StratCon requires COMBAT forces with a valid role (e.g., FRONTLINE) to be deployable.
+                        for (Formation formation : campaign.getFormations().getAllSubFormations()) {
+                            if (!formation.getUnits().isEmpty()) {
+                                formation.setFormationType(FormationType.STANDARD, false);
+                                formation.setCombatRoleInMemory(CombatRole.FRONTLINE);
+                                formation.setCombatTeamStatus(true);
+                                LOGGER.info("AIService: Initialized formation " + formation.getName() + " as a FRONTLINE Combat Team.");
+                            }
+                        }
+                        
                         if (campaign.getReputation() != null) {
                             campaign.getReputation().initializeReputation(campaign);
                         }
@@ -545,51 +566,17 @@ public class DataLoadingDialog extends AbstractMHQDialogBasic implements Propert
                     // 4. Initial Mission
                     if (proposal.initialContract != null) {
                         try {
-                            AtBContract contract = new AtBContract("Initial AI Mission");
-                            contract.setEmployerCode(proposal.initialContract.employerCode, campaign.getGameYear());
-                            contract.setEnemyCode(proposal.initialContract.enemyCode);
+                            mekhq.service.ai.MissionProposal initialMission = new mekhq.service.ai.MissionProposal();
+                            initialMission.title = "Initial AI Mission";
+                            initialMission.briefing = "This is your first combat action in the " + proposal.campaignName + " campaign. Prepare your units and deploy to the mission zone.\n\n" + (proposal.backgroundStory != null ? proposal.backgroundStory : "");
+                            initialMission.missionType = proposal.initialContract.missionType;
+                            initialMission.employerCode = proposal.initialContract.employerCode;
+                            initialMission.enemyCode = proposal.initialContract.enemyCode;
+                            initialMission.planetName = proposal.startingPlanetName;
+                            initialMission.difficulty = proposal.initialContract.difficulty;
+                            initialMission.lengthWeeks = proposal.initialContract.lengthMonths * 4;
                             
-                            try {
-                                AtBContractType type = AtBContractType.valueOf(proposal.initialContract.missionType);
-                                contract.setContractType(type);
-                            } catch (IllegalArgumentException e) {
-                                contract.setContractType(AtBContractType.GARRISON_DUTY);
-                            }
-                            
-                            contract.setLength(proposal.initialContract.lengthMonths);
-                            contract.setStartAndEndDate(campaign.getLocalDate());
-                            contract.setDifficulty(proposal.initialContract.difficulty);
-                            contract.setStatus(MissionStatus.ACTIVE);
-                            contract.setDesc(proposal.backgroundStory); // Mission description
-                            
-                            // Initialize contract parameters (salvage, overhead, etc.) to avoid 0-pay
-                            contract.setSalvagePct(50);
-                            contract.setBattleLossComp(50);
-                            contract.setTransportComp(50);
-                            contract.setStraightSupport(50);
-                            contract.setAdvancePct(25);
-                            contract.setMRBCFee(true);
-                            
-                            contract.initContractDetails(campaign);
-                            contract.calculateContract(campaign);
-                            
-                            Planet p = campaign.getLocation().getPlanet();
-                            if (p != null && p.getParentSystem() != null) {
-                                contract.setSystemId(p.getParentSystem().getId());
-                            } else {
-                                contract.setSystemId("Unknown System");
-                            }
-                            
-                            // Add a starting scenario
-                            AtBDynamicScenario scenario = new AtBDynamicScenario();
-                            scenario.setName("The Opening Engagement");
-                            scenario.setDesc("This is your first combat action in the " + proposal.campaignName + " campaign. " +
-                                            "Prepare your units and deploy to the mission zone.");
-                            scenario.setDate(campaign.getLocalDate());
-                            scenario.setStatus(ScenarioStatus.CURRENT);
-                            contract.addScenario(scenario);
-                            
-                            campaign.addMission(contract);
+                            mekhq.service.ai.AIHelper.addMissionFromProposal(campaign, initialMission);
                             LOGGER.info("AIService: Added initial mission: " + proposal.initialContract.missionType);
                         } catch (Exception e) {
                             LOGGER.error("AIService: Failed to setup initial contract", e);

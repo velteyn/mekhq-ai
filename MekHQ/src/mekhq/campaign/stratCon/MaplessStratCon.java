@@ -96,6 +96,11 @@ public class MaplessStratCon {
     public static void deployWithoutMap(StratConPanel stratConPanel, Campaign campaign, Scenario scenario) {
         StratConDeploymentContext deploymentContext = buildScenarioData(campaign, scenario);
         if (deploymentContext == null) {
+            javax.swing.JOptionPane.showMessageDialog(null,
+                "Unable to deploy this scenario. The StratCon campaign state or scenario link may be missing.\n" +
+                "Check the log for details (search for 'MaplessStratCon').",
+                "Deploy Error",
+                javax.swing.JOptionPane.WARNING_MESSAGE);
             return;
         }
 
@@ -119,31 +124,36 @@ public class MaplessStratCon {
      * @since 0.50.10
      */
     private static @Nullable StratConDeploymentContext buildScenarioData(Campaign campaign, Scenario scenario) {
+        LOGGER.info("MaplessStratCon: Building scenario data for scenario ID: " + scenario.getId());
         Mission mission = campaign.getMission(scenario.getMissionId());
         if (!(mission instanceof AtBContract atbContract)) {
             // We should have obstructed the user before they get to this point
-            LOGGER.error("Mission is not an AtBContract: {}", mission);
+            LOGGER.error("MaplessStratCon: Mission is not an AtBContract for mission ID: " + scenario.getMissionId());
             return null;
         }
 
         StratConCampaignState campaignState = atbContract.getStratconCampaignState();
         if (campaignState == null) {
-            LOGGER.warn("CampaignState is null for contract: {}", atbContract);
+            LOGGER.warn("MaplessStratCon: CampaignState is null for contract: " + atbContract.getName());
             return null;
         }
 
         int scenarioId = scenario.getId();
+        LOGGER.info("MaplessStratCon: Searching for scenario ID " + scenarioId + " in " + campaignState.getTracks().size() + " tracks");
 
         for (StratConTrackState track : campaignState.getTracks()) {
             for (Map.Entry<StratConCoords, StratConScenario> scenarioInTrack : track.getScenarios().entrySet()) {
-                if (scenarioInTrack.getValue().getBackingScenarioID() == scenarioId) {
+                int backingId = scenarioInTrack.getValue().getBackingScenarioID();
+                LOGGER.info("MaplessStratCon: Checking scenario in track with backing ID: " + backingId);
+                if (backingId == scenarioId) {
+                    LOGGER.info("MaplessStratCon: Found matching scenario in track!");
                     return new StratConDeploymentContext(campaignState, track, scenarioInTrack.getValue(),
                           scenarioInTrack.getKey());
                 }
             }
         }
 
-        LOGGER.warn("Unable to find scenario {} in any tracks", scenarioId);
+        LOGGER.warn("MaplessStratCon: Unable to find scenario " + scenarioId + " in any tracks");
         return null;
     }
 

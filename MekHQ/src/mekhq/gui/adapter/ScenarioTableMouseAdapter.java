@@ -46,6 +46,7 @@ import mekhq.campaign.mission.Mission;
 import mekhq.campaign.mission.Scenario;
 import mekhq.campaign.stratCon.MaplessStratCon;
 import mekhq.gui.CampaignGUI;
+import megamek.logging.MMLogger;
 import mekhq.gui.StratConTab;
 import mekhq.gui.dialog.CustomizeScenarioDialog;
 import mekhq.gui.enums.MHQTabType;

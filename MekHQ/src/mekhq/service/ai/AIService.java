@@ -139,7 +139,10 @@ public class AIService {
         String fullPrompt = "User Request: " + userPrompt + 
             "\n\nGenerate a new campaign proposal in JSON format with the following fields: " +
             "campaignName (the title of the story), mercenaryUnitName (the actual name of the player's unit), " +
-            "startYear, startingFactionCode (use ONLY valid short codes: FS, LC, DC, CC, FWL, CS, WOB, PIR, MERC), " +
+            "startYear (e.g. 3025, 3050, 3145), startingFactionCode (use ONLY valid short codes: FS, LC, DC, CC, FWL, CS, WOB, PIR, MERC). " +
+            "CRITICAL: The startYear MUST match the startingFactionCode's active period in lore. " +
+            "Example: ComStar (CS) is only active 2781-3081. Word of Blake (WOB) is 3052-3081. " +
+            "If the startYear is 3151 (ilClan era), ComStar and Word of Blake are NOT available. " +
             "startingPlanetName, backgroundStory, startingFunds (amount of C-Bills, typically 10000000 to 50000000), " +
             "startingUnits (a list of 4 units, each with modelName (e.g. 'Thunderbolt TDR-5S', 'Shadow Hawk SHD-2H', 'Stinger STG-3G'), " +
             "pilotName, pilotSkills (e.g. 4/5), and backstory), " +
