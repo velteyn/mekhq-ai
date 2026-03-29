@@ -497,9 +497,47 @@ public class CampaignNewDayManager {
         // War & Peace Notifications
         new WarAndPeaceProcessor(campaign, false);
 
+        // AI Galactic News Ticker
+        generateAINews();
+
         // campaign must be the last step before returning true
         MekHQ.triggerEvent(new NewDayEvent(campaign));
         return true;
+    }
+
+    private void generateAINews() {
+        if (!MekHQ.getMHQOptions().isUseAIStoryteller()) {
+            return;
+        }
+
+        StringBuilder contextBuilder = new StringBuilder();
+        contextBuilder.append("Current Date: ").append(today.toString()).append("\n");
+        contextBuilder.append("Current Location: ").append(updatedLocation.getPlanet().getName(today)).append(" (").append(updatedLocation.getPlanet().getFactionDesc(today)).append(")\n");
+        contextBuilder.append("Faction: ").append(faction.getFullName(today.getYear())).append("\n");
+
+        // Add some summary of the last 24h if possible
+        if (!campaign.getNewBattleReports().isEmpty()) {
+            contextBuilder.append("Recent Combat activity reported.\n");
+        }
+        if (!campaign.getNewPersonnelReports().isEmpty()) {
+            contextBuilder.append("Recent Personnel changes/events.\n");
+        }
+
+        mekhq.service.ai.AIService aiService = new mekhq.service.ai.AIService();
+        aiService.generateGalacticNews(contextBuilder.toString()).thenAccept(response -> {
+            if (response != null && response.newsItems != null) {
+                for (String news : response.newsItems) {
+                    campaign.addReport(DailyReportType.NEWS, "<b>[GALACTIC NEWS]</b> " + news);
+                }
+                // Trigger a UI update for the news tab if it's currently showing
+                javax.swing.SwingUtilities.invokeLater(() -> {
+                    campaign.getApp().getCampaigngui().getCommandCenterTab().refreshDailyReport(DailyReportType.NEWS);
+                });
+            }
+        }).exceptionally(ex -> {
+            LOGGER.error("Failed to generate AI News", ex);
+            return null;
+        });
     }
 
     private void checkForBioweaponAttacksOrNewVaccines(String systemName, String systemId) {

@@ -405,6 +405,10 @@ public class Campaign implements ITechManager {
     private transient String politicsReportHTML;
     private transient List<String> newPoliticsReports;
 
+    private final ArrayList<String> newsReport;
+    private transient String newsReportHTML;
+    private transient List<String> newNewsReports;
+
     private boolean fieldKitchenWithinCapacity;
     private int mashTheatreCapacity;
     private int repairBaysRented;
@@ -691,6 +695,10 @@ public class Campaign implements ITechManager {
         politicsReport = new ArrayList<>();
         politicsReportHTML = "";
         newPoliticsReports = new ArrayList<>();
+
+        newsReport = new ArrayList<>();
+        newsReportHTML = "";
+        newNewsReports = new ArrayList<>();
 
         // Secondary initialization from passed / derived values
         news = new News(getGameYear(), id.getLeastSignificantBits());
@@ -3625,6 +3633,32 @@ public class Campaign implements ITechManager {
         return oldPoliticsReports;
     }
 
+    public List<String> getNewsReport() {
+        return newsReport;
+    }
+
+    public void setNewsReportHTML(String html) {
+        newsReportHTML = html;
+    }
+
+    public String getNewsReportHTML() {
+        return newsReportHTML;
+    }
+
+    public List<String> getNewNewsReports() {
+        return newNewsReports;
+    }
+
+    public void setNewNewsReports(List<String> reports) {
+        newNewsReports = reports;
+    }
+
+    public List<String> fetchAndClearNewNewsReports() {
+        List<String> oldNewsReports = newNewsReports;
+        setNewNewsReports(new ArrayList<>());
+        return oldNewsReports;
+    }
+
     /**
      * Finds the active person in a particular role with the highest level in a given, with an optional secondary skill
      * to break ties.
@@ -6248,6 +6282,17 @@ public class Campaign implements ITechManager {
                 }
 
                 newTechnicalReports.add(report);
+            }
+            case NEWS -> {
+                newsReport.add(report);
+                if (!newsReportHTML.isEmpty()) {
+                    newsReportHTML = newsReportHTML + REPORT_LINEBREAK + report;
+                    newNewsReports.add(REPORT_LINEBREAK);
+                } else {
+                    newsReportHTML = report;
+                }
+
+                newNewsReports.add(report);
             }
             case FINANCES -> {
                 financesReport.add(report);

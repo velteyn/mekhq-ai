@@ -149,6 +149,7 @@ public class StartupScreenPanel extends AbstractMHQPanel {
               true);
         btnNewCampaign.addActionListener(evt -> {
             btnNewCampaign.setEnabled(false);
+            MekHQ.getMHQOptions().setUseAIStoryteller(false);
 
             SwingUtilities.invokeLater(() -> {
                 try {
@@ -185,6 +186,7 @@ public class StartupScreenPanel extends AbstractMHQPanel {
                         
                         int choice = JOptionPane.showConfirmDialog(getFrame(), summary, "AI Campaign Proposal", JOptionPane.YES_NO_OPTION);
                         if (choice == JOptionPane.YES_OPTION) {
+                            MekHQ.getMHQOptions().setUseAIStoryteller(true);
                             MekHQ.getMHQOptions().setCampaignBackstory(proposal.backgroundStory);
                             MekHQ.setPendingAiProposal(proposal);
                             startCampaign(null);

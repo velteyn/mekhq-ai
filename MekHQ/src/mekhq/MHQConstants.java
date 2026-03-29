@@ -188,6 +188,7 @@ public final class MHQConstants extends SuiteConstants {
     public static final String SELF_CORRECT_MAINTENANCE = "SelfCorrectMaintenance";
     public static final String NEW_DAY_FORCE_ICON_OPERATIONAL_STATUS = "newDayFormationIconOperationalStatus";
     public static final String NEW_DAY_FORCE_ICON_OPERATIONAL_STATUS_STYLE = "newDayFormationIconOperationalStatusStyle";
+    public static final String USE_AI_STORYTELLER = "useAIStoryteller";
     // endregion New Day
 
     // region Campaign XML Save Options

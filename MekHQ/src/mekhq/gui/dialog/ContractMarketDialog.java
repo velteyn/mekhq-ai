@@ -509,6 +509,7 @@ public class ContractMarketDialog extends JDialog {
         btnGenerate.setName("btnGenerate");
         boolean finalIsUseCommandCircuit = isUseCommandCircuit;
         btnGenerate.addActionListener(evt -> {
+            MekHQ.getMHQOptions().setUseAIStoryteller(false);
             AtBContract contract = contractMarket.addAtBContract(campaign);
 
             if (contract == null) {
@@ -583,6 +584,7 @@ public class ContractMarketDialog extends JDialog {
                 
                 aiService.generateMission(prompt, context)
                     .thenAccept(proposal -> SwingUtilities.invokeLater(() -> {
+                        MekHQ.getMHQOptions().setUseAIStoryteller(true);
                         addAiMission(proposal);
                         btnAiGenerate.setEnabled(true);
                         btnAiGenerate.setText("<html><center>AI MISSION<br>Storyteller</center></html>");

@@ -39,6 +39,7 @@ import static mekhq.campaign.enums.DailyReportType.FINANCES;
 import static mekhq.campaign.enums.DailyReportType.GENERAL;
 import static mekhq.campaign.enums.DailyReportType.MEDICAL;
 import static mekhq.campaign.enums.DailyReportType.PERSONNEL;
+import static mekhq.campaign.enums.DailyReportType.NEWS;
 import static mekhq.campaign.enums.DailyReportType.POLITICS;
 import static mekhq.campaign.enums.DailyReportType.SKILL_CHECKS;
 import static mekhq.campaign.enums.DailyReportType.TECHNICAL;
@@ -153,6 +154,7 @@ public final class CommandCenterTab extends CampaignGuiTab {
     private DailyReportLogPanel pnlFinancesLog;
     private DailyReportLogPanel pnlAcquisitionsLog;
     private DailyReportLogPanel pnlTechnicalLog;
+    private DailyReportLogPanel pnlNewsLog;
 
     private boolean logNagActiveGeneral = false;
     private boolean logNagActiveBattle = false;
@@ -163,6 +165,7 @@ public final class CommandCenterTab extends CampaignGuiTab {
     private boolean logNagActiveAcquisitions = false;
     private boolean logNagActiveTechnical = false;
     private boolean logNagActiveSkillChecks = false;
+    private boolean logNagActiveNews = false;
 
     // procurement table
     private JPanel panProcurement;
@@ -229,6 +232,10 @@ public final class CommandCenterTab extends CampaignGuiTab {
 
     public DailyReportLogPanel getTechnicalLog() {
         return pnlTechnicalLog;
+    }
+
+    public DailyReportLogPanel getNewsLog() {
+        return pnlNewsLog;
     }
     //endregion Getters/Setters
 
@@ -556,6 +563,11 @@ public final class CommandCenterTab extends CampaignGuiTab {
         pnlTechnicalLog.setMinimumSize(size);
         pnlTechnicalLog.setPreferredSize(size);
 
+        pnlNewsLog = new DailyReportLogPanel(getCampaignGui());
+        pnlNewsLog.setBorder(RoundedLineBorder.createRoundedLineBorder(resourceMap.getString("panLog.title")));
+        pnlNewsLog.setMinimumSize(size);
+        pnlNewsLog.setPreferredSize(size);
+
         tabLogs = new EnhancedTabbedPane();
         tabLogs.setName("dailyReportTabs");
         tabLogs.addTab(GENERAL.getIconString(), pnlGeneralLog);
@@ -576,6 +588,8 @@ public final class CommandCenterTab extends CampaignGuiTab {
         tabLogs.setToolTipTextAt(POLITICS.getTabIndex(), POLITICS.getTooltip());
         tabLogs.addTab(SKILL_CHECKS.getIconString(), pnlSkillLog);
         tabLogs.setToolTipTextAt(SKILL_CHECKS.getTabIndex(), SKILL_CHECKS.getTooltip());
+        tabLogs.addTab(NEWS.getIconString(), pnlNewsLog);
+        tabLogs.setToolTipTextAt(NEWS.getTabIndex(), NEWS.getTooltip());
 
         tabLogs.addChangeListener(evt -> {
             int selectedIndex = tabLogs.getSelectedIndex();
@@ -606,6 +620,7 @@ public final class CommandCenterTab extends CampaignGuiTab {
             case ACQUISITIONS -> logNagActiveAcquisitions;
             case TECHNICAL -> logNagActiveTechnical;
             case SKILL_CHECKS -> logNagActiveSkillChecks;
+            case NEWS -> logNagActiveNews;
         };
     }
 
@@ -620,6 +635,7 @@ public final class CommandCenterTab extends CampaignGuiTab {
             case ACQUISITIONS -> logNagActiveAcquisitions = isActive;
             case TECHNICAL -> logNagActiveTechnical = isActive;
             case SKILL_CHECKS -> logNagActiveSkillChecks = isActive;
+            case NEWS -> logNagActiveNews = isActive;
         }
     }
 
@@ -834,6 +850,7 @@ public final class CommandCenterTab extends CampaignGuiTab {
         refreshFinancesLog();
         refreshAcquisitionsLog();
         refreshTechnicalLog();
+        refreshNewsLog();
     }
 
     /**
@@ -1019,6 +1036,10 @@ public final class CommandCenterTab extends CampaignGuiTab {
         String technicalReport = getCampaign().getTechnicalReportHTML();
         pnlTechnicalLog.refreshLog(technicalReport, TECHNICAL);
         getCampaign().fetchAndClearNewTechnicalReports();
+
+        String newsReport = getCampaign().getNewsReportHTML();
+        pnlNewsLog.refreshLog(newsReport, NEWS);
+        getCampaign().fetchAndClearNewNewsReports();
     }
 
     /**
@@ -1060,6 +1081,25 @@ public final class CommandCenterTab extends CampaignGuiTab {
         pnlTechnicalLog.appendLog(getCampaign().fetchAndClearNewTechnicalReports(), TECHNICAL);
     }
 
+    synchronized public void refreshDailyReport(DailyReportType type) {
+        switch (type) {
+            case GENERAL -> refreshGeneralLog();
+            case SKILL_CHECKS -> refreshSkillLog();
+            case BATTLE -> refreshBattleLog();
+            case POLITICS -> refreshPoliticsLog();
+            case PERSONNEL -> refreshPersonnelLog();
+            case MEDICAL -> refreshMedicalLog();
+            case FINANCES -> refreshFinancesLog();
+            case ACQUISITIONS -> refreshAcquisitionsLog();
+            case TECHNICAL -> refreshTechnicalLog();
+            case NEWS -> refreshNewsLog();
+        }
+    }
+
+    synchronized private void refreshNewsLog() {
+        pnlNewsLog.appendLog(getCampaign().fetchAndClearNewNewsReports(), NEWS);
+    }
+
     private final ActionScheduler procurementListScheduler = new ActionScheduler(this::refreshProcurementList);
     private final ActionScheduler basicInfoScheduler = new ActionScheduler(this::refreshBasicInfo);
     private final ActionScheduler objectivesScheduler = new ActionScheduler(this::refreshObjectives);
@@ -1091,6 +1131,7 @@ public final class CommandCenterTab extends CampaignGuiTab {
         refreshFinancesLog();
         refreshAcquisitionsLog();
         refreshTechnicalLog();
+        refreshNewsLog();
     }
 
     @Subscribe

@@ -255,6 +255,7 @@ public class MHQOptionsDialog extends AbstractMHQButtonDialog {
     private JSpinner spnStartGameBotClientDelay;
     private JSpinner spnStartGameBotClientRetryCount;
     private MMComboBox<CompanyGenerationMethod> comboDefaultCompanyGenerationMethod;
+    private JCheckBox optionUseAIStoryteller;
     private JTextField txtAiServiceUrl;
     private JButton btnTestAiConnection;
     // endregion Miscellaneous
@@ -1451,6 +1452,15 @@ public class MHQOptionsDialog extends AbstractMHQButtonDialog {
         lblAiServiceUrl.setToolTipText(resources.getString("lblAiServiceUrl.toolTipText"));
         lblAiServiceUrl.setName("lblAiServiceUrl");
 
+        optionUseAIStoryteller = new JCheckBox("Enable AI Storyteller");
+        optionUseAIStoryteller.setToolTipText("If enabled, MekHQ will use a local AI service (like LM Studio) to generate galactic news and character biographies.");
+        optionUseAIStoryteller.addActionListener(e -> {
+            boolean enabled = optionUseAIStoryteller.isSelected();
+            lblAiServiceUrl.setEnabled(enabled);
+            txtAiServiceUrl.setEnabled(enabled);
+            btnTestAiConnection.setEnabled(enabled);
+        });
+
         txtAiServiceUrl = new JTextField(20);
         txtAiServiceUrl.setToolTipText(resources.getString("lblAiServiceUrl.toolTipText"));
         txtAiServiceUrl.setName("txtAiServiceUrl");
@@ -1590,6 +1600,7 @@ public class MHQOptionsDialog extends AbstractMHQButtonDialog {
                                         .addGroup(layout.createSequentialGroup()
                                                         .addComponent(lblDefaultCompanyGenerationMethod)
                                                         .addComponent(comboDefaultCompanyGenerationMethod))
+                                        .addComponent(optionUseAIStoryteller)
                                         .addGroup(layout.createSequentialGroup()
                                                         .addComponent(lblAiServiceUrl)
                                                         .addComponent(txtAiServiceUrl)
@@ -1774,6 +1785,10 @@ public class MHQOptionsDialog extends AbstractMHQButtonDialog {
         options
               .setNagDialogIgnore(MHQConstants.NAG_UNABLE_TO_AFFORD_SHOPPING_LIST,
                     optionUnableToAffordShoppingListNag.isSelected());
+
+        options.setUseAIStoryteller(optionUseAIStoryteller.isSelected());
+        options.setAiServiceUrl(txtAiServiceUrl.getText());
+
         options
               .setNagDialogIgnore(MHQConstants.CONFIRMATION_CONTRACT_RENTAL,
                     optionContractRentalConfirmation.isSelected());
@@ -1802,7 +1817,6 @@ public class MHQOptionsDialog extends AbstractMHQButtonDialog {
         options.setStartGameBotClientRetryCount((Integer) spnStartGameBotClientRetryCount.getValue());
         options
               .setDefaultCompanyGenerationMethod(Objects.requireNonNull(comboDefaultCompanyGenerationMethod.getSelectedItem()));
-        options.setAiServiceUrl(txtAiServiceUrl.getText());
 
         MekHQ.triggerEvent(new MHQOptionsChangedEvent());
     }
@@ -1813,7 +1827,6 @@ public class MHQOptionsDialog extends AbstractMHQButtonDialog {
         guiScale.setValue((int) (GUIPreferences.getInstance().getGUIScale() * 10));
         optionDisplayDateFormat.setText(options.getDisplayDateFormat());
         optionLongDisplayDateFormat.setText(options.getLongDisplayDateFormat());
-        txtAiServiceUrl.setText(options.getAiServiceUrl("http://127.0.0.1:1234/v1/chat/completions"));
         optionHideUnitFluff.setSelected(options.getHideUnitFluff());
         optionHistoricalDailyLog.setSelected(options.getHistoricalDailyLog());
         chkCompanyGeneratorStartup.setSelected(options.getCompanyGeneratorStartup());
@@ -1996,7 +2009,14 @@ public class MHQOptionsDialog extends AbstractMHQButtonDialog {
         spnStartGameClientRetryCount.setValue(options.getStartGameClientRetryCount());
         spnStartGameBotClientDelay.setValue(options.getStartGameBotClientDelay());
         spnStartGameBotClientRetryCount.setValue(options.getStartGameBotClientRetryCount());
-        comboDefaultCompanyGenerationMethod.setSelectedItem(options.getDefaultCompanyGenerationMethod());
+        comboDefaultCompanyGenerationMethod.setSelectedItem(MekHQ.getMHQOptions().getDefaultCompanyGenerationMethod());
+        
+        optionUseAIStoryteller.setSelected(MekHQ.getMHQOptions().isUseAIStoryteller());
+        txtAiServiceUrl.setText(MekHQ.getMHQOptions().getAiServiceUrl("http://127.0.0.1:1234/v1/chat/completions"));
+        
+        boolean aiEnabled = optionUseAIStoryteller.isSelected();
+        txtAiServiceUrl.setEnabled(aiEnabled);
+        btnTestAiConnection.setEnabled(aiEnabled);
     }
 
     // region Data Validation

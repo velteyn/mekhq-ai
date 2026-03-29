@@ -182,6 +182,15 @@ public class MaplessStratCon {
             return;
         }
 
+        if (stratConPanel == null) {
+            LOGGER.error("MaplessStratCon: stratConPanel is null, cannot proceed with deployment");
+            javax.swing.JOptionPane.showMessageDialog(null,
+                  "Error: The StratCon UI panel is not initialized. Please click on the 'Campaign State' tab once and try again.",
+                  "Deployment Error",
+                  javax.swing.JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
         // We're going to use these values a lot, so we're going to unpack them from the deploymentContext Record
         StratConCampaignState campaignState = deploymentContext.campaignState;
         StratConTrackState trackState = deploymentContext.trackState;
@@ -193,6 +202,11 @@ public class MaplessStratCon {
 
         TrackForceAssignmentUI assignmentUI = stratConPanel.getAssignmentUI();
         StratConScenarioWizard scenarioWizard = stratConPanel.getStratConScenarioWizard();
+
+        if (assignmentUI == null || scenarioWizard == null) {
+            LOGGER.error("MaplessStratCon: UI components are null in stratConPanel");
+            return;
+        }
 
         boolean isPrimaryForce = false;
         StratConScenario.ScenarioState currentState = stratConScenario.getCurrentState();

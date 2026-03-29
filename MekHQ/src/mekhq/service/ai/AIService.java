@@ -160,6 +160,25 @@ public class AIService {
         @JsonProperty("bio") public String bio;
     }
 
+    public static class NewsResponse {
+        @JsonProperty("newsItems") public List<String> newsItems;
+    }
+
+    public CompletableFuture<NewsResponse> generateGalacticNews(String context) {
+        String prompt = "Context: " + context + "\n\n" +
+            "Generate 3 short, immersive 'Galactic News' or 'Rumors' headlines/snippets for the BattleTech universe. " +
+            "The news should be era-appropriate (current year) and location-aware. " +
+            "One item should ideally reference the player's recent activities (victory, losses, repairs) in a 'rumor at the local bar' or 'mercenary bulletin' style. " +
+            "The other two should be general galactic news matching the current year's major lore events or local regional tensions.\n\n" +
+            "OUTPUT INSTRUCTIONS:\n" +
+            "1. Respond ONLY with a single valid JSON object.\n" +
+            "2. DO NOT include any comments.\n" +
+            "3. DO NOT include preamble or reasoning.\n" +
+            "4. The JSON must contain exactly one field: 'newsItems' (a list of 3 strings).";
+
+        return callLLMWithRetry(prompt, NewsResponse.class, 0);
+    }
+
     public CompletableFuture<BiographiesResponse> generateBiographies(String context, List<mekhq.campaign.personnel.Person> personnel, java.time.LocalDate date) {
         StringBuilder prompt = new StringBuilder();
         prompt.append("Context: ").append(context).append("\n\n");
@@ -212,7 +231,7 @@ public class AIService {
                 .header("Accept", "application/json")
                 .header("User-Agent", "MekHQ/AI-Storyteller")
                 .POST(HttpRequest.BodyPublishers.ofString(jsonRequest))
-                .timeout(Duration.ofMinutes(10))
+                .timeout(Duration.ofSeconds(60))
                 .build();
 
             return httpClient.sendAsync(httpRequest, HttpResponse.BodyHandlers.ofString())

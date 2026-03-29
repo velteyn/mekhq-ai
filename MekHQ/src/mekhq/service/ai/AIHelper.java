@@ -130,12 +130,16 @@ public class AIHelper {
             scenario.setDesc(proposal.briefing != null ? proposal.briefing : "");
             scenario.setDate(campaign.getLocalDate());
             scenario.setStatus(ScenarioStatus.CURRENT);
-            scenario.setMissionId(contract.getId()); // EXPLICIT LINK REQUIRED FOR DEPLOYMENT
+            // 10. Add Scenario to Campaign — this assigns the scenario its permanent ID
+            if (contract.getId() == -1) {
+                LOGGER.warn("AIHelper: Contract ID not set before adding scenario, forcing assignment");
+                campaign.addMission(contract);
+            }
+            scenario.setMissionId(contract.getId()); // Double check link
             AtBDynamicScenarioFactory.setScenarioMapSize(scenario, campaign);
             
-            // 10. Add Scenario to Campaign — this assigns the scenario its permanent ID
             campaign.addScenario(scenario, contract, true);
-            LOGGER.info("AIHelper: Scenario added with ID: " + scenario.getId());
+            LOGGER.info("AIHelper: Scenario added with ID: " + scenario.getId() + " linked to Mission: " + scenario.getMissionId());
             
             // 11. Link Scenario to StratCon track
             StratConCampaignState state = contract.getStratconCampaignState();
@@ -171,6 +175,8 @@ public class AIHelper {
             stratConScenario.setCoords(scenarioCoords);
             stratConScenario.setBackingScenario(scenario);
             stratConScenario.setActionDate(scenario.getDate());
+            stratConScenario.setDeploymentDate(scenario.getDate()); // Essential for StratCon deployment logic
+            stratConScenario.setReturnDate(scenario.getDate().plusDays(track.getDeploymentTime())); // Essential for StratCon force return
             stratConScenario.setRequiredPlayerLances(1);
             
             // Use the proper API which also updates the backingScenariosMap

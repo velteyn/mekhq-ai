@@ -3146,6 +3146,7 @@ public class CampaignGUI extends JPanel {
                         case TECHNICAL -> commandCenterTab.getTechnicalLog();
                         case POLITICS -> commandCenterTab.getPoliticsLog();
                         case SKILL_CHECKS -> commandCenterTab.getSkillLog();
+                        case NEWS -> commandCenterTab.getNewsLog();
                     };
 
                     if (!DailyReportLogPanel.isDateOnly(List.of(reportTab.getLogText()))) {

@@ -138,6 +138,14 @@ public final class MHQOptions extends SuiteOptions {
     public void setCommandCenterMRMS(boolean value) {
         userPreferences.node(MHQConstants.DISPLAY_NODE).putBoolean(MHQConstants.COMMAND_CENTER_MRMS, value);
     }
+
+    public boolean isUseAIStoryteller() {
+        return userPreferences.node(MHQConstants.NEW_DAY_NODE).getBoolean(MHQConstants.USE_AI_STORYTELLER, false);
+    }
+
+    public void setUseAIStoryteller(boolean value) {
+        userPreferences.node(MHQConstants.NEW_DAY_NODE).putBoolean(MHQConstants.USE_AI_STORYTELLER, value);
+    }
     // endregion Command Center Tab
 
     // region Interstellar Map Tab
