@@ -33,6 +33,7 @@
 package mekhq.campaign.stratCon;
 
 import static mekhq.campaign.stratCon.StratConScenario.ScenarioState.PRIMARY_FORCES_COMMITTED;
+import static mekhq.campaign.stratCon.StratConScenario.ScenarioState.REINFORCEMENTS_COMMITTED;
 import static mekhq.campaign.stratCon.StratConScenario.ScenarioState.UNRESOLVED;
 
 import java.util.Map;
@@ -45,6 +46,7 @@ import mekhq.campaign.mission.AtBDynamicScenario;
 import mekhq.campaign.mission.Mission;
 import mekhq.campaign.mission.Scenario;
 import mekhq.gui.StratConPanel;
+import mekhq.gui.baseComponents.immersiveDialogs.ImmersiveDialogNotification;
 import mekhq.gui.stratCon.StratConScenarioWizard;
 import mekhq.gui.stratCon.TrackForceAssignmentUI;
 
