@@ -123,7 +123,6 @@ import mekhq.gui.utilities.ObservableString;
 import mekhq.service.AutosaveService;
 import mekhq.service.IAutosaveService;
 import megamek.common.event.MMEvent;
-import mekhq.service.ai.AIService;
 import mekhq.service.ai.CampaignProposal;
 import mekhq.utilities.ScenarioUtils;
 

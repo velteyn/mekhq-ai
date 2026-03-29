@@ -216,6 +216,77 @@ public class CompanyGenerationDialog extends AbstractMHQValidationButtonDialog {
         campaign.setReputation(reputationController);
 
         processBonusUnitsBasedOnCampaignOptions(trackers, options);
+
+        // --- AI Biography Hook ---
+        int choice = javax.swing.JOptionPane.showConfirmDialog(getFrame(), 
+            "Company generation complete!\n\nWould you like your AI storyteller to generate lore-friendly, contextual biographies for your newly recruited combat personnel?", 
+            "Generate AI Biographies", 
+            javax.swing.JOptionPane.YES_NO_OPTION);
+            
+        if (choice == javax.swing.JOptionPane.YES_OPTION) {
+            java.util.List<Person> newCombatPersonnel = new java.util.ArrayList<>();
+            for (CompanyGenerationPersonTracker tracker : trackers) {
+                if (tracker.getPersonType().isCombat() && tracker.getPerson() != null) {
+                    newCombatPersonnel.add(tracker.getPerson());
+                }
+            }
+            
+            if (!newCombatPersonnel.isEmpty()) {
+                javax.swing.ProgressMonitor progressMonitor = new javax.swing.ProgressMonitor(getFrame(), "Generating AI Biographies...", "Connecting to local LLM...", 0, 100);
+                progressMonitor.setMillisToDecideToPopup(0);
+                progressMonitor.setMillisToPopup(0);
+                
+                javax.swing.SwingWorker<Void, Void> worker = new javax.swing.SwingWorker<Void, Void>() {
+                    @Override
+                    protected Void doInBackground() throws Exception {
+                        progressMonitor.setProgress(20);
+                        
+                        mekhq.service.ai.AIService aiService = new mekhq.service.ai.AIService();
+                        String context = "Current Year: " + campaign.getGameYear() + "\n" +
+                                         "Faction: " + campaign.getFaction().getFullName(campaign.getGameYear()) + "\n" +
+                                         "Location: " + campaign.getLocation().getPlanet().getName(campaign.getLocalDate());
+                                         
+                        try {
+                            // Using join to block the background thread while getting response
+                            mekhq.service.ai.AIService.BiographiesResponse response = aiService.generateBiographies(context, newCombatPersonnel, campaign.getLocalDate()).join();
+                            
+                            progressMonitor.setProgress(80);
+                            progressMonitor.setNote("Applying generated bios...");
+                            
+                            if (response != null && response.biographies != null) {
+                                for (mekhq.service.ai.AIService.Biography bioData : response.biographies) {
+                                    for (Person p : newCombatPersonnel) {
+                                        if (p.getId().toString().equals(bioData.id)) {
+                                            p.setBiography(bioData.bio);
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                        } catch (Exception ex) {
+                            megamek.logging.MMLogger.create(CompanyGenerationDialog.class).error("AI Biography generation failed", ex);
+                        }
+                        
+                        return null;
+                    }
+                    
+                    @Override
+                    protected void done() {
+                        progressMonitor.setProgress(100);
+                        javax.swing.SwingUtilities.invokeLater(() -> {
+                            if (!progressMonitor.isCanceled()) {
+                                javax.swing.JOptionPane.showMessageDialog(getFrame(), "AI biographes have been applied successfully!", "Success", javax.swing.JOptionPane.INFORMATION_MESSAGE);
+                                for (Person p : newCombatPersonnel) {
+                                    MekHQ.triggerEvent(new mekhq.campaign.events.persons.PersonChangedEvent(p));
+                                }
+                            }
+                        });
+                    }
+                };
+                worker.execute();
+            }
+        }
+        // --- End AI Hook ---
     }
 
     private void processBonusUnitsBasedOnCampaignOptions(List<CompanyGenerationPersonTracker> trackers,

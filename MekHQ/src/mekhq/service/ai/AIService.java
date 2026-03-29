@@ -151,6 +151,41 @@ public class AIService {
         return callLLMWithRetry(fullPrompt, CampaignProposal.class, 0);
     }
 
+    public static class BiographiesResponse {
+        @JsonProperty("biographies") public List<Biography> biographies;
+    }
+
+    public static class Biography {
+        @JsonProperty("id") public String id;
+        @JsonProperty("bio") public String bio;
+    }
+
+    public CompletableFuture<BiographiesResponse> generateBiographies(String context, List<mekhq.campaign.personnel.Person> personnel, java.time.LocalDate date) {
+        StringBuilder prompt = new StringBuilder();
+        prompt.append("Context: ").append(context).append("\n\n");
+        prompt.append("Generate lore-accurate, short 2-3 sentence biographies for the following mercenary personnel. ");
+        prompt.append("Make each backstory distinct, fitting their role, name, and the current year/faction context.\n\n");
+        prompt.append("Personnel List:\n");
+
+        for (mekhq.campaign.personnel.Person p : personnel) {
+            prompt.append("- ID: ").append(p.getId().toString())
+                  .append(" | Name: ").append(p.getFullName())
+                  .append(" | Role: ").append(p.getPrimaryRole().toString())
+                  .append(" | Origin: ").append(p.getOriginPlanet() != null ? p.getOriginPlanet().getName(date) : "Unknown")
+                  .append("\n");
+        }
+
+        prompt.append("\nOUTPUT INSTRUCTIONS:\n")
+              .append("1. Respond ONLY with a single valid JSON object.\n")
+              .append("2. DO NOT include any comments (// or /*) inside the JSON.\n")
+              .append("3. DO NOT include any 'Thinking Process', reasoning, preamble, or post-script text.\n")
+              .append("4. DO NOT use markdown code blocks (no ```json).\n")
+              .append("5. The JSON must contain exactly one field: 'biographies' (a list of objects).\n")
+              .append("6. Each object in the list MUST have: 'id' (the exact ID string provided) and 'bio' (the generated backstory).");
+
+        return callLLMWithRetry(prompt.toString(), BiographiesResponse.class, 0);
+    }
+
     private <T> CompletableFuture<T> callLLM(String prompt, Class<T> responseType) {
         return callLLMWithRetry(prompt, responseType, 0);
     }
