@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2014 - Carl Spain. All rights reserved.
- * Copyright (C) 2014-2025 The MegaMek Team. All Rights Reserved.
+ * Copyright (C) 2014-2026 The MegaMek Team. All Rights Reserved.
  *
  * This file is part of MekHQ.
  *
@@ -47,13 +47,13 @@ import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import megamek.codeUtilities.MathUtility;
 import megamek.common.annotations.Nullable;
 import megamek.common.compute.Compute;
 import megamek.common.options.IOption;
 import megamek.common.rolls.TargetRoll;
 import megamek.logging.MMLogger;
 import mekhq.campaign.Campaign;
+import mekhq.campaign.campaignOptions.CampaignOptions;
 import mekhq.campaign.finances.Money;
 import mekhq.campaign.mission.AtBContract;
 import mekhq.campaign.mission.Contract;
@@ -139,27 +139,32 @@ public class RetirementDefectionTracker {
             rollRequired.add(mission.getId());
         }
 
-        if (campaign.getCampaignOptions().isUseManagementSkill()) {
+        CampaignOptions campaignOptions = campaign.getCampaignOptions();
+        if (campaignOptions.isUseManagementSkill()) {
             getManagementSkillValues(campaign);
         }
 
+        boolean includeCivilians = campaignOptions.isIncludeCivilians();
         for (Person person : campaign.getActivePersonnel(false, false)) {
-            if ((person.getPrimaryRole().isCivilian()) ||
-                      (person.isDeployed())) {
+            if (!includeCivilians && person.isCivilian()) {
+                continue;
+            }
+
+            if (person.isDeployed()) {
                 continue;
             }
 
             if (person.isFounder()) {
                 if (person.getAge(campaign.getLocalDate()) < RETIREMENT_AGE) {
-                    if (!campaign.getCampaignOptions().isUseRandomFounderTurnover()) {
+                    if (!campaignOptions.isUseRandomFounderTurnover()) {
                         continue;
                     }
-                } else if (!campaign.getCampaignOptions().isUseFounderRetirement()) {
+                } else if (!campaignOptions.isUseFounderRetirement()) {
                     continue;
                 }
             }
 
-            if (campaign.getCampaignOptions().isUseSubContractSoldiers()) {
+            if (campaignOptions.isUseSubContractSoldiers()) {
                 if ((person.getUnit() != null) &&
                           (person.getUnit().usesSoldiers()) &&
                           (!person.getUnit().isCommander(person))) {
@@ -178,13 +183,13 @@ public class RetirementDefectionTracker {
             // Service Contract
             if (isBreakingContract(person,
                   campaign.getLocalDate(),
-                  campaign.getCampaignOptions().getServiceContractDuration())) {
-                targetNumber.addModifier(-campaign.getCampaignOptions().getServiceContractModifier(),
+                  campaignOptions.getServiceContractDuration())) {
+                targetNumber.addModifier(-campaignOptions.getServiceContractModifier(),
                       resources.getString("contract.text"));
             }
 
             // Desirability modifier
-            if ((campaign.getCampaignOptions().isUseSkillModifiers()) &&
+            if ((campaignOptions.isUseSkillModifiers()) &&
                       (person.getAge(campaign.getLocalDate()) < RETIREMENT_AGE)) {
                 targetNumber.addModifier(min(EXP_ELITE - 2, person.getExperienceLevel(campaign, false, true) - 2),
                       resources.getString("desirability.text"));
@@ -203,9 +208,9 @@ public class RetirementDefectionTracker {
             }
 
             // Fatigue modifier
-            if ((campaign.getCampaignOptions().isUseFatigue()) &&
-                      (campaign.getCampaignOptions().isUseFatigueModifiers())) {
-                int fatigueModifier = MathUtility.clamp(((person.getAdjustedFatigue() - 1) / 4) - 1, 0, 3);
+            if ((campaignOptions.isUseFatigue()) &&
+                      (campaignOptions.isUseFatigueModifiers())) {
+                int fatigueModifier = Math.clamp(((person.getAdjustedFatigue() - 1) / 4) - 1, 0, 3);
 
                 if (fatigueModifier > 0) {
                     targetNumber.addModifier(fatigueModifier, resources.getString("fatigue.text"));
@@ -213,7 +218,7 @@ public class RetirementDefectionTracker {
             }
 
             // HR Strain Modifiers
-            if (campaign.getCampaignOptions().isUseHRStrain()) {
+            if (campaignOptions.isUseHRStrain()) {
                 int hrStrainModifier = getHRStrainModifier(campaign);
 
                 if (hrStrainModifier > 0) {
@@ -223,16 +228,16 @@ public class RetirementDefectionTracker {
             }
 
             // Management Skill Modifier
-            if (campaign.getCampaignOptions().isUseManagementSkill()) {
-                int modifier = campaign.getCampaignOptions().getManagementSkillPenalty();
+            if (campaignOptions.isUseManagementSkill()) {
+                int modifier = campaignOptions.getManagementSkillPenalty();
 
-                if (campaign.getCampaignOptions().isUseCommanderLeadershipOnly()) {
+                if (campaignOptions.isUseCommanderLeadershipOnly()) {
                     Person commander = campaign.getCommander();
                     if (commander != null && commander.hasSkill((SkillType.S_LEADER))) {
                         SkillModifierData skillModifierData = commander.getSkillModifierData(true);
 
                         modifier -= commander.getSkill(SkillType.S_LEADER)
-                                          .getFinalSkillValue(skillModifierData);
+                                          .getTotalSkillLevel(skillModifierData);
                     }
                 } else {
                     modifier -= getManagementSkillModifier(person);
@@ -242,7 +247,7 @@ public class RetirementDefectionTracker {
             }
 
             // Shares Modifiers
-            if (campaign.getCampaignOptions().isUseShareSystem()) {
+            if (campaignOptions.isUseShareSystem()) {
                 // If this retirement roll is not being made at the end of a contract (e.g. >12
                 // months since last roll),
                 // the share percentage should still apply.
@@ -276,20 +281,20 @@ public class RetirementDefectionTracker {
             }
 
             // Unit Rating modifier
-            if (campaign.getCampaignOptions().isUseUnitRatingModifiers()) {
+            if (campaignOptions.isUseUnitRatingModifiers()) {
                 int unitRatingModifier = getUnitRatingModifier(campaign);
                 targetNumber.addModifier(unitRatingModifier, resources.getString("unitRating.text"));
             }
 
             // Active Mission modifier
-            if (campaign.getCampaignOptions().isUseHostileTerritoryModifiers()) {
+            if (campaignOptions.isUseHostileTerritoryModifiers()) {
                 if (isHostileTerritory(campaign)) {
                     targetNumber.addModifier(-2, resources.getString("hostileTerritory.text"));
                 }
             }
 
             // Mission completion status modifiers
-            if ((mission != null) && (campaign.getCampaignOptions().isUseMissionStatusModifiers())) {
+            if ((mission != null) && (campaignOptions.isUseMissionStatusModifiers())) {
                 if (mission.getStatus().isSuccess()) {
                     targetNumber.addModifier(-1, resources.getString("missionSuccess.text"));
                 } else if (mission.getStatus().isFailed()) {
@@ -300,11 +305,11 @@ public class RetirementDefectionTracker {
             }
 
             // Loyalty
-            if ((campaign.getCampaignOptions().isUseLoyaltyModifiers()) &&
-                      (!campaign.getCampaignOptions().isUseHideLoyalty())) {
+            if ((campaignOptions.isUseLoyaltyModifiers()) &&
+                      (!campaignOptions.isUseHideLoyalty())) {
 
                 int loyaltyScore = person.getAdjustedLoyalty(campaign.getFaction(),
-                      campaign.getCampaignOptions().isUseAlternativeAdvancedMedical());
+                      campaignOptions.isUseAlternativeAdvancedMedical());
 
                 if (person.isCommander()) {
                     loyaltyScore += 2;
@@ -318,7 +323,7 @@ public class RetirementDefectionTracker {
             }
 
             // Faction Modifiers
-            if (campaign.getCampaignOptions().isUseFactionModifiers()) {
+            if (campaignOptions.isUseFactionModifiers()) {
                 Faction campaignFaction = campaign.getFaction();
 
                 // campaign faction modifiers
@@ -355,7 +360,7 @@ public class RetirementDefectionTracker {
             }
 
             // Age Modifiers
-            if (campaign.getCampaignOptions().isUseAgeModifiers()) {
+            if (campaignOptions.isUseAgeModifiers()) {
                 int ageMod = getAgeMod(person.getAge(campaign.getLocalDate()));
 
                 if (ageMod < 0) {
@@ -363,13 +368,13 @@ public class RetirementDefectionTracker {
                 } else if ((ageMod > 0) &&
                                  (!isBreakingContract(person,
                                        campaign.getLocalDate(),
-                                       campaign.getCampaignOptions().getServiceContractDuration()))) {
+                                       campaignOptions.getServiceContractDuration()))) {
                     targetNumber.addModifier(ageMod, resources.getString("ageRetirement.text"));
                 }
             }
 
             // Family Modifier
-            if (campaign.getCampaignOptions().isUseFamilyModifiers()) {
+            if (campaignOptions.isUseFamilyModifiers()) {
                 Person spouse = person.getGenealogy().getSpouse();
                 List<Person> children = person.getGenealogy().getChildren();
 
@@ -399,7 +404,7 @@ public class RetirementDefectionTracker {
             }
 
             // Injury Modifiers
-            int injuryMod = (int) person.getInjuries().stream().filter(Injury::isPermanent).count();
+            int injuryMod = getInjuryTurnoverModifier(person);
 
             if (injuryMod > 0) {
                 targetNumber.addModifier(injuryMod, resources.getString("injuries.text"));
@@ -449,7 +454,7 @@ public class RetirementDefectionTracker {
         List<Contract> activeContracts = campaign.getActiveContracts();
 
         if (!activeContracts.isEmpty()) {
-            if (campaign.getCampaignOptions().isUseAtB()) {
+            if (campaign.getCampaignOptions().isUseStratCon()) {
                 Optional<Contract> defensiveContract = activeContracts.stream()
                                                              .filter(contract -> contract instanceof AtBContract)
                                                              .filter(atBContract -> !defensiveContracts.contains(((AtBContract) atBContract).getContractType()))
@@ -499,9 +504,8 @@ public class RetirementDefectionTracker {
             case NAVAL -> navalCommanderModifier;
             case TECH -> techCommanderModifier;
             case MEDICAL -> medicalCommanderModifier;
-            case ADMINISTRATOR -> administrationCommanderModifier;
+            case ADMINISTRATOR, CIVILIAN -> administrationCommanderModifier;
             case MEKWARRIOR -> mekWarriorCommanderModifier;
-            case CIVILIAN -> 0;
         };
     }
 
@@ -521,103 +525,99 @@ public class RetirementDefectionTracker {
             }
 
             switch (Profession.getProfessionFromPersonnelRole(person.getPrimaryRole())) {
-                case AEROSPACE:
+                case AEROSPACE -> {
                     if (person.outRanksUsingSkillTiebreaker(campaign, asfCommander)) {
                         asfCommander = person;
                         asfCommanderModifier = getIndividualCommanderLeadership(asfCommander);
                     }
-                    break;
-                case VEHICLE:
+                }
+                case VEHICLE -> {
                     if (person.outRanksUsingSkillTiebreaker(campaign, vehicleCrewCommander)) {
                         vehicleCrewCommander = person;
                         vehicleCrewCommanderModifier = getIndividualCommanderLeadership(vehicleCrewCommander);
                     }
-                    break;
-                case INFANTRY:
+                }
+                case INFANTRY -> {
                     if (person.outRanksUsingSkillTiebreaker(campaign, infantryCommander)) {
                         infantryCommander = person;
                         infantryCommanderModifier = getIndividualCommanderLeadership(infantryCommander);
                     }
-                    break;
-                case NAVAL:
+                }
+                case NAVAL -> {
                     if (person.outRanksUsingSkillTiebreaker(campaign, navalCommander)) {
                         navalCommander = person;
                         navalCommanderModifier = getIndividualCommanderLeadership(navalCommander);
                     }
-                    break;
-                case TECH:
+                }
+                case TECH -> {
                     if (person.outRanksUsingSkillTiebreaker(campaign, techCommander)) {
                         techCommander = person;
                         techCommanderModifier = getIndividualCommanderLeadership(techCommander);
                     }
-                    break;
-                case MEDICAL:
+                }
+                case MEDICAL -> {
                     if (person.outRanksUsingSkillTiebreaker(campaign, medicalCommander)) {
                         medicalCommander = person;
                         medicalCommanderModifier = getIndividualCommanderLeadership(medicalCommander);
                     }
-                    break;
-                case ADMINISTRATOR:
+                }
+                case ADMINISTRATOR, CIVILIAN -> {
                     if (person.outRanksUsingSkillTiebreaker(campaign, administrationCommander)) {
                         administrationCommander = person;
                         administrationCommanderModifier = getIndividualCommanderLeadership(administrationCommander);
                     }
-                    break;
-                case MEKWARRIOR:
+                }
+                case MEKWARRIOR -> {
                     if (person.outRanksUsingSkillTiebreaker(campaign, mekWarriorCommander)) {
                         mekWarriorCommander = person;
                         mekWarriorCommanderModifier = getIndividualCommanderLeadership(mekWarriorCommander);
                     }
-                    break;
-                case CIVILIAN:
-                    break;
+                }
             }
         }
 
         for (Profession profession : Profession.values()) {
             switch (profession) {
-                case AEROSPACE:
+                case AEROSPACE -> {
                     if (asfCommander == null) {
                         asfCommanderModifier = 0;
                     }
-                    break;
-                case VEHICLE:
+                }
+                case VEHICLE -> {
                     if (vehicleCrewCommander == null) {
                         vehicleCrewCommanderModifier = 0;
                     }
-                    break;
-                case INFANTRY:
+                }
+                case INFANTRY -> {
                     if (infantryCommander == null) {
                         infantryCommanderModifier = 0;
                     }
-                    break;
-                case NAVAL:
+                }
+                case NAVAL -> {
                     if (navalCommander == null) {
                         navalCommanderModifier = 0;
                     }
-                    break;
-                case TECH:
+                }
+                case TECH -> {
                     if (techCommander == null) {
                         techCommanderModifier = 0;
                     }
-                    break;
-                case MEDICAL:
+                }
+                case MEDICAL -> {
                     if (medicalCommander == null) {
                         medicalCommanderModifier = 0;
                     }
-                    break;
-                case ADMINISTRATOR:
+                }
+                case ADMINISTRATOR, CIVILIAN -> {
                     if (administrationCommander == null) {
                         administrationCommanderModifier = 0;
                     }
-                    break;
-                case MEKWARRIOR:
+                }
+                case MEKWARRIOR -> {
                     if (mekWarriorCommander == null) {
                         mekWarriorCommanderModifier = 0;
                     }
-                    break;
-                case CIVILIAN:
-                    break;
+                }
             }
         }
     }
@@ -633,7 +633,7 @@ public class RetirementDefectionTracker {
         if (commander.hasSkill(SkillType.S_LEADER)) {
             SkillModifierData skillModifierData = commander.getSkillModifierData();
 
-            return commander.getSkill(SkillType.S_LEADER).getFinalSkillValue(skillModifierData);
+            return commander.getSkill(SkillType.S_LEADER).getTotalSkillLevel(skillModifierData);
         } else {
             return 0;
         }
@@ -1045,6 +1045,37 @@ public class RetirementDefectionTracker {
     }
 
     /**
+     * Returns the number of permanent, non-prosthetic injuries for turnover modifier calculation.
+     *
+     * <p>Prosthetics and implants are excluded because they are elective modifications,
+     * not debilitating injuries that would cause a person to leave a unit.</p>
+     *
+     * @param person the person to evaluate
+     *
+     * @return count of permanent injuries excluding prosthetics and implants
+     */
+    static int getInjuryTurnoverModifier(final Person person) {
+        return (int) person.getInjuries().stream()
+                           .filter(i -> !i.getSubType().isPermanentModification())
+                           .filter(Injury::isPermanent)
+                           .count();
+    }
+
+    /**
+     * Returns whether a person has permanent injuries (excluding prosthetics/implants) that qualify them for medical
+     * discharge.
+     *
+     * @param person the person to evaluate
+     *
+     * @return {@code true} if the person has at least one permanent non-prosthetic injury
+     */
+    static boolean hasMedicalDischargeInjuries(final Person person) {
+        return person.getInjuries().stream()
+                     .filter(i -> !i.getSubType().isPermanentModification())
+                     .anyMatch(Injury::isPermanent);
+    }
+
+    /**
      * Class used to record the required payout to each retired/defected/killed/sacked person.
      */
     public static class Payout {
@@ -1081,7 +1112,7 @@ public class RetirementDefectionTracker {
                 payoutAmount = getPayoutOrBonusValue(campaign, person).multipliedBy(campaign.getCampaignOptions()
                                                                                           .getPayoutRetirementMultiplier());
                 // person is getting medically discharged
-            } else if (!person.getPermanentInjuries().isEmpty()) {
+            } else if (hasMedicalDischargeInjuries(person)) {
                 payoutAmount = getPayoutOrBonusValue(campaign, person).multipliedBy(campaign.getCampaignOptions()
                                                                                           .getPayoutRetirementMultiplier());
                 // person is defecting

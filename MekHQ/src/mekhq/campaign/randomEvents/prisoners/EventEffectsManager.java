@@ -35,7 +35,6 @@ package mekhq.campaign.randomEvents.prisoners;
 import static java.lang.Math.ceil;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
-import static megamek.codeUtilities.MathUtility.clamp;
 import static megamek.codeUtilities.ObjectUtility.getRandomItem;
 import static megamek.common.compute.Compute.d6;
 import static mekhq.campaign.force.FormationType.SECURITY;
@@ -288,7 +287,7 @@ public class EventEffectsManager {
         // this event, they will never actually die.
         int wounds = max(magnitude, 1);
 
-        int priorHits = max(target.getHits(), target.getInjuries().size());
+        int priorHits = target.getTotalInjurySeverity();
 
         wounds = InjurySPAUtility.adjustInjuriesAndFatigueForSPAs(target,
               campaign.getCampaignOptions().isUseInjuryFatigue(),
@@ -346,9 +345,9 @@ public class EventEffectsManager {
         for (int i = 0; i < targetCount; i++) {
             Person target = getRandomItem(potentialTargets);
 
-            int wounds = clamp(d6(), 1, 5);
+            int wounds = Math.clamp(d6(), 1, 5);
 
-            int priorHits = max(target.getHits(), target.getInjuries().size());
+            int priorHits = target.getTotalInjurySeverity();
 
             wounds = InjurySPAUtility.adjustInjuriesAndFatigueForSPAs(target, isUseInjuryFatigue, fatigueRate, wounds);
 
@@ -934,7 +933,7 @@ public class EventEffectsManager {
         Map<AtBContract, StratConCampaignState> potentialTargets = new HashMap<>();
 
         for (AtBContract contract : campaign.getActiveAtBContracts()) {
-            StratConCampaignState campaignState = contract.getStratconCampaignState();
+            StratConCampaignState campaignState = contract.getStratConCampaignState();
 
             if (campaignState != null) {
                 potentialTargets.put(contract, campaignState);

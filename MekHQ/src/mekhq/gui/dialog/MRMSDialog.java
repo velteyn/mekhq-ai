@@ -58,6 +58,7 @@ import javax.swing.table.TableRowSorter;
 import megamek.client.ui.models.XTableColumnModel;
 import megamek.client.ui.preferences.JWindowPreference;
 import megamek.client.ui.preferences.PreferencesNode;
+import megamek.common.ui.FastJScrollPane;
 import megamek.logging.MMLogger;
 import mekhq.MekHQ;
 import mekhq.campaign.campaignOptions.CampaignOptions;
@@ -69,14 +70,12 @@ import mekhq.campaign.personnel.skills.SkillType;
 import mekhq.campaign.unit.Unit;
 import mekhq.campaign.work.IPartWork;
 import mekhq.gui.CampaignGUI;
-import mekhq.gui.baseComponents.AbstractMHQScrollablePanel;
 import mekhq.gui.baseComponents.DefaultMHQScrollablePanel;
 import mekhq.gui.model.PartsTableModel;
 import mekhq.gui.model.UnitTableModel;
 import mekhq.gui.sorter.PartsDetailSorter;
 import mekhq.gui.sorter.UnitStatusSorter;
 import mekhq.gui.sorter.UnitTypeSorter;
-import mekhq.gui.utilities.JScrollPaneWithSpeed;
 import mekhq.service.enums.MRMSMode;
 import mekhq.service.mrms.MRMSConfiguredOptions;
 import mekhq.service.mrms.MRMSOption;
@@ -295,7 +294,7 @@ public class MRMSDialog extends JDialog {
         final Container content = getContentPane();
         content.setLayout(new BorderLayout());
 
-        AbstractMHQScrollablePanel pnlMain = new DefaultMHQScrollablePanel(frame, "pnlMain", new GridBagLayout());
+        DefaultMHQScrollablePanel pnlMain = new DefaultMHQScrollablePanel(frame, "pnlMain", new GridBagLayout());
 
         if (getMode().isUnits()) {
             pnlMain.add(createUnitsPanel(), createBaseConstraints(0));
@@ -307,7 +306,7 @@ public class MRMSDialog extends JDialog {
 
         pnlMain.add(createOptionsPanel(), createBaseConstraints(2));
 
-        content.add(new JScrollPaneWithSpeed(pnlMain), BorderLayout.CENTER);
+        content.add(new FastJScrollPane(pnlMain), BorderLayout.CENTER);
         content.add(createActionButtons(), BorderLayout.SOUTH);
 
         pack();
@@ -366,7 +365,7 @@ public class MRMSDialog extends JDialog {
         unitTable.setIntercellSpacing(new Dimension(0, 0));
         unitTable.setShowGrid(false);
 
-        JScrollPane scrollUnitList = new JScrollPaneWithSpeed(unitTable);
+        JScrollPane scrollUnitList = new FastJScrollPane(unitTable);
         scrollUnitList.setMinimumSize(new Dimension(350, 200));
         scrollUnitList.setPreferredSize(new Dimension(350, 200));
 
@@ -417,7 +416,7 @@ public class MRMSDialog extends JDialog {
         partsTable.setIntercellSpacing(new Dimension(0, 0));
         partsTable.setShowGrid(false);
 
-        JScrollPane scrollPartsTable = new JScrollPaneWithSpeed(partsTable);
+        JScrollPane scrollPartsTable = new FastJScrollPane(partsTable);
         scrollPartsTable.setMinimumSize(new Dimension(350, 200));
         scrollPartsTable.setPreferredSize(new Dimension(350, 200));
 

@@ -47,6 +47,7 @@ import java.util.Map;
 import java.util.ResourceBundle;
 
 import megamek.common.battleArmor.BattleArmor;
+import megamek.common.enums.SkillLevel;
 import megamek.common.rolls.TargetRoll;
 import megamek.common.units.Aero;
 import megamek.common.units.Mek;
@@ -792,13 +793,16 @@ public class MRMSService {
             }
 
             Skill skill = tech.getSkillForWorkingOn(partWork);
+            SkillModifierData skillModifierData = tech.getSkillModifierData();
 
             if (canChangeWorkTime) {
                 ((Part) partWork).resetModeToNormal();
             }
 
             // We really only have to check one tech of each skill level
-            if (!techSkillToWorktimeMap.containsKey(skill.getType().getName() + "-" + skill.getLevel())) {
+            SkillLevel skillLevel = skill.getSkillLevel(skillModifierData);
+            int experienceLevel = skillLevel.getExperienceLevel();
+            if (!techSkillToWorktimeMap.containsKey(skill.getType().getName() + "-" + experienceLevel)) {
                 TargetRoll targetRoll = campaign.getTargetFor(partWork, tech);
                 WorkTime selectedWorktime = WorkTime.NORMAL;
 
@@ -851,7 +855,7 @@ public class MRMSService {
                     }
                 }
 
-                techSkillToWorktimeMap.put(skill.getType().getName() + "-" + skill.getLevel(), selectedWorktime);
+                techSkillToWorktimeMap.put(skill.getType().getName() + "-" + experienceLevel, selectedWorktime);
 
                 if (canChangeWorkTime) {
                     ((Part) partWork).resetModeToNormal();
@@ -861,7 +865,7 @@ public class MRMSService {
             // Fallback TN check to account for discrepancies between Techs
             TargetRoll targetRoll = campaign.getTargetFor(partWork, tech);
             if (canChangeWorkTime) {
-                WorkTime workTime = techSkillToWorktimeMap.get(skill.getType().getName() + "-" + skill.getLevel());
+                WorkTime workTime = techSkillToWorktimeMap.get(skill.getType().getName() + "-" + experienceLevel);
                 if (null == workTime) {
                     debugLog("[ERROR] Null work-time from techToWorktimeMap for %s", "repairPart", tech.getFullName());
                     workTime = WorkTime.NORMAL;
@@ -894,7 +898,7 @@ public class MRMSService {
 
             boolean isSameDayTech;
 
-            WorkTime workTime = getWorkTime(canChangeWorkTime, techSkillToWorktimeMap, skill, tech);
+            WorkTime workTime = getWorkTime(canChangeWorkTime, techSkillToWorktimeMap, skill, tech, experienceLevel);
             int expectedTime = getExpectedWorkTime((partWork), workTime);
 
             if ((tech.getMinutesLeft() < expectedTime)) {
@@ -954,10 +958,13 @@ public class MRMSService {
             return MRMSPartAction.createNoTechs(partWork);
         }
 
-        Person tech = validTechs.get(0);
+        Person tech = validTechs.getFirst();
 
         Skill skill = tech.getSkillForWorkingOn(partWork);
-        WorkTime workTime = getWorkTime(canChangeWorkTime, techSkillToWorktimeMap, skill, tech);
+        SkillModifierData skillModifierData = tech.getSkillModifierData();
+        SkillLevel skillLevel = skill.getSkillLevel(skillModifierData);
+        int experienceLevel = skillLevel.getExperienceLevel();
+        WorkTime workTime = getWorkTime(canChangeWorkTime, techSkillToWorktimeMap, skill, tech, experienceLevel);
 
         setPartWorkTime(partWork, workTime);
 
@@ -988,12 +995,12 @@ public class MRMSService {
         }
     }
 
-    private static WorkTime getWorkTime(boolean canChangeWorkTime,
-          Map<String, WorkTime> techSkillToWorktimeMap, Skill skill, Person tech) {
+    private static WorkTime getWorkTime(boolean canChangeWorkTime, Map<String, WorkTime> techSkillToWorktimeMap,
+          Skill skill, Person tech, int experienceLevel) {
         WorkTime workTime = WorkTime.NORMAL;
         if (canChangeWorkTime) {
 
-            workTime = techSkillToWorktimeMap.get(skill.getType().getName() + "-" + skill.getLevel());
+            workTime = techSkillToWorktimeMap.get(skill.getType().getName() + "-" + experienceLevel);
 
             if (null == workTime) {
                 debugLog("[ERROR] Null work-time from techToWorktimeMap for %s", "repairPart", tech.getFullName());
@@ -1121,13 +1128,11 @@ public class MRMSService {
             }
 
             Skill skill = tech.getSkillForWorkingOn(partWork);
-
             if (skill == null) {
                 continue;
             }
 
             SkillModifierData skillModifierData = tech.getSkillModifierData();
-
             if (mrmsOption.getSkillMin() > skill.getExperienceLevel(skillModifierData)) {
                 continue;
             }
@@ -1164,8 +1169,8 @@ public class MRMSService {
     }
 
     /**
-     * Checks whether an AmmoBin has ammo available in the warehouse.
-     * Non-AmmoBin parts always pass. Salvaging parts always pass.
+     * Checks whether an AmmoBin has ammo available in the warehouse. Non-AmmoBin parts always pass. Salvaging parts
+     * always pass.
      *
      * @param part The part to check.
      *
@@ -1407,22 +1412,27 @@ public class MRMSService {
             this.status = status;
         }
 
+        @Deprecated(since = "0.51.0", forRemoval = true)
         public boolean isStatusRepaired() {
             return status == STATUS.REPAIRED;
         }
 
+        @Deprecated(since = "0.51.0", forRemoval = true)
         public boolean isStatusMaxSkillReached() {
             return status == STATUS.MAX_SKILL_REACHED;
         }
 
+        @Deprecated(since = "0.51.0", forRemoval = true)
         public boolean isStatusOptionDisabled() {
             return status == STATUS.MRO_DISABLED;
         }
 
+        @Deprecated(since = "0.51.0", forRemoval = true)
         public boolean isStatusNoTechs() {
             return status == STATUS.NO_TECHS;
         }
 
+        @Deprecated(since = "0.51.0", forRemoval = true)
         public int getMaxTechSkill() {
             return maxTechSkill;
         }
@@ -1431,28 +1441,13 @@ public class MRMSService {
             this.maxTechSkill = maxTechSkill;
         }
 
+        @Deprecated(since = "0.51.0", forRemoval = true)
         public int getConfiguredTargetNumberPreferred() {
             return configuredTargetNumberPreferred;
         }
 
-        /**
-         * @deprecated consider {@link #getConfiguredTargetNumberPreferred()}
-         */
-        @Deprecated(since = "0.50.07", forRemoval = true)
-        public int getConfiguredBTHMin() {
-            return this.getConfiguredTargetNumberPreferred();
-        }
-
         public void setConfiguredTargetNumberPreferred(int configuredTargetNumberPreferred) {
             this.configuredTargetNumberPreferred = configuredTargetNumberPreferred;
-        }
-
-        /**
-         * @deprecated consider {@link #setConfiguredTargetNumberPreferred(int)}
-         */
-        @Deprecated(since = "0.50.07", forRemoval = true)
-        public void setConfiguredBTHMin(int configuredBTHMin) {
-            this.setConfiguredTargetNumberPreferred(configuredBTHMin);
         }
 
         public static MRMSPartAction createRepaired(IPartWork partWork) {
@@ -1543,6 +1538,7 @@ public class MRMSService {
             return partSet;
         }
 
+        @Deprecated(since = "0.51.0", forRemoval = true)
         public void setPartSet(MRMSPartSet partSet) {
             this.partSet = partSet;
         }
@@ -1567,18 +1563,22 @@ public class MRMSService {
             return status == STATUS.NO_ACTIONS;
         }
 
+        @Deprecated(since = "0.51.0", forRemoval = true)
         public boolean isStatusActionsPerformed() {
             return status == STATUS.ACTIONS_PERFORMED;
         }
 
+        @Deprecated(since = "0.51.0", forRemoval = true)
         public boolean isStatusNoTechs() {
             return status == STATUS.NO_TECHS;
         }
 
+        @Deprecated(since = "0.51.0", forRemoval = true)
         public boolean isStatusUnfixableLimb() {
             return status == STATUS.UNFIXABLE_LIMB;
         }
 
+        @Deprecated(since = "0.51.0", forRemoval = true)
         public boolean isStatusNoParts() {
             return status == STATUS.NO_PARTS;
         }

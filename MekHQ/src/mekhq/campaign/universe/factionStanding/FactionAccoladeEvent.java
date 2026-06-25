@@ -32,6 +32,7 @@
  */
 package mekhq.campaign.universe.factionStanding;
 
+import static mekhq.campaign.personnel.ranks.Rank.RO_MIN;
 import static mekhq.campaign.universe.factionStanding.FactionAccoladeLevel.*;
 import static mekhq.campaign.universe.factionStanding.FactionStandingUtilities.PIRACY_SUCCESS_INDEX_FACTION_CODE;
 import static mekhq.campaign.universe.factionStanding.FactionStandingUtilities.getFactionName;
@@ -64,6 +65,7 @@ import mekhq.campaign.force.CombatTeam;
 import mekhq.campaign.force.FormationLevel;
 import mekhq.campaign.personnel.Person;
 import mekhq.campaign.personnel.enums.PersonnelRole;
+import mekhq.campaign.personnel.ranks.AutoAssignRankForCompanyGenerator;
 import mekhq.campaign.universe.Faction;
 import mekhq.campaign.universe.Factions;
 import mekhq.campaign.universe.IUnitGenerator;
@@ -141,6 +143,7 @@ public class FactionAccoladeEvent {
                                      accoladeLevel.is(CASH_BONUS_4);
 
         Person commander = campaign.getCommander();
+        String factionName = getFactionName(accoladingFaction, campaign.getGameYear());
 
         boolean accoladeWasRefused;
 
@@ -153,13 +156,14 @@ public class FactionAccoladeEvent {
         } else {
             String lookupName = accoladeLevel.getLookupName();
             String oocText = null;
+
             if (accoladeLevel.is(ADOPTION_OR_MEKS)) {
                 lookupName += isSameFaction ? LOOKUP_AFFIX_MEKS : LOOKUP_AFFIX_ADOPTION;
 
                 String oocTextKey = isSameFaction
                                           ? "FactionJudgmentDialog.message.ACCOLADE.ADOPTION_OR_MEKS.meks.ooc"
                                           : "FactionJudgmentDialog.message.ACCOLADE.ADOPTION_OR_MEKS.adoption.ooc";
-                oocText = getTextAt(getFactionJudgmentDialogResourceBundle(), oocTextKey);
+                oocText = getFormattedTextAt(getFactionJudgmentDialogResourceBundle(), oocTextKey, factionName);
             }
 
             ImmersiveDialogWidth dialogWidth;
@@ -176,10 +180,13 @@ public class FactionAccoladeEvent {
             }
 
             Person speaker = getSpeaker(campaign, accoladingFaction, accoladeLevel);
-            if (speaker != null &&
-                      isCashReward &&
-                      accoladingFaction.getShortName().equals(PIRACY_SUCCESS_INDEX_FACTION_CODE)) {
-                speaker = null;
+
+            if (speaker != null) {
+                AutoAssignRankForCompanyGenerator.assignRankSystemFromFaction(speaker, RO_MIN);
+                if (isCashReward &&
+                          accoladingFaction.getShortName().equals(PIRACY_SUCCESS_INDEX_FACTION_CODE)) {
+                    speaker = null;
+                }
             }
 
             FactionJudgmentDialog initialDialog = new FactionJudgmentDialog(campaign, speaker, commander, lookupName,
@@ -198,7 +205,7 @@ public class FactionAccoladeEvent {
             if (!isSameFaction && accoladeWasRefused) {
                 String message = getFormattedTextAt(getFactionJudgmentDialogResourceBundle(),
                       "FactionJudgmentDialog.message.ACCOLADE.ADOPTION_OR_MEKS.meks.campaign",
-                      getFactionName(accoladingFaction, campaign.getGameYear()),
+                      factionName,
                       spanOpeningWithCustomColor(getWarningColor()), CLOSING_SPAN_TAG);
 
                 new ImmersiveDialogNotification(campaign, message, false);

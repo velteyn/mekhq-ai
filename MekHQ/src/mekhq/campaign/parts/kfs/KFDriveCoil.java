@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019-2025 The MegaMek Team. All Rights Reserved.
+ * Copyright (C) 2019-2026 The MegaMek Team. All Rights Reserved.
  *
  * This file is part of MekHQ.
  *
@@ -86,6 +86,7 @@ public class KFDriveCoil extends Part {
         return docks;
     }
 
+    @Deprecated(since = "0.51.0", forRemoval = true)
     public KFDriveCoil() {
         this(0, Jumpship.DRIVE_CORE_STANDARD, 0, null);
     }
@@ -180,7 +181,7 @@ public class KFDriveCoil extends Part {
             // you can't salvage and keep this in the warehouse, just remove/scrap and
             // replace it
             // See SO p130 for reference
-            campaign.getWarehouse().removePart(this);
+            getWarehouse().removePart(this);
             unit.removePart(this);
             Part missing = getMissingPart();
             unit.addPart(missing);

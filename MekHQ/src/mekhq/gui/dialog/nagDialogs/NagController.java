@@ -159,7 +159,7 @@ public class NagController {
         }
 
         // Unmaintained Units
-        final Collection<Unit> units = campaign.getUnits();
+        final Collection<Unit> units = campaign.getAllUnits();
         final boolean isCheckMaintenance = campaignOptions.isCheckMaintenance();
 
         if (UnmaintainedUnitsNagDialog.checkNag(units, isCheckMaintenance)) {
@@ -222,7 +222,7 @@ public class NagController {
         }
 
         // Deployment Shortfall
-        final boolean isUseAtB = campaignOptions.isUseAtB();
+        final boolean isUseAtB = campaignOptions.isUseStratCon();
 
         if (DeploymentShortfallNagDialog.checkNag(isUseAtB, campaign)) {
             DeploymentShortfallNagDialog deploymentShortfallNagDialog = new DeploymentShortfallNagDialog(campaign);

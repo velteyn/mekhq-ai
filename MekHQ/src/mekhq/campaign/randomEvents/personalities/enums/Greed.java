@@ -32,7 +32,6 @@
  */
 package mekhq.campaign.randomEvents.personalities.enums;
 
-import static megamek.codeUtilities.MathUtility.clamp;
 import static mekhq.campaign.randomEvents.personalities.enums.PersonalityTraitType.GREED;
 import static mekhq.utilities.MHQInternationalization.getFormattedTextAt;
 import static mekhq.utilities.MHQInternationalization.getTextAt;
@@ -40,6 +39,7 @@ import static mekhq.utilities.MHQInternationalization.getTextAt;
 import megamek.common.enums.Gender;
 import megamek.logging.MMLogger;
 import mekhq.campaign.personnel.PronounData;
+import mekhq.campaign.randomEvents.personalities.PersonalityTrait;
 
 /**
  * Represents various levels and traits of greed in a personality.
@@ -51,7 +51,7 @@ import mekhq.campaign.personnel.PronounData;
  * <p>Some traits, referred to as "Major Traits," denote stronger personality attributes
  * and are to be handled distinctly. These traits are always listed at the end of the enumeration.</p>
  */
-public enum Greed {
+public enum Greed implements PersonalityTrait {
     // region Enum Declarations
     NONE(false, false),
     ASTUTE(true, false),
@@ -133,6 +133,7 @@ public enum Greed {
      * @author Illiani
      * @since 0.50.06
      */
+    @Deprecated(since = "0.51.0", forRemoval = true)
     public String getPersonalityTraitTypeLabel() {
         return getPersonalityTraitType().getLabel();
     }
@@ -172,7 +173,7 @@ public enum Greed {
      */
     public String getDescription(int greedDescriptionIndex, final Gender gender,
           final String givenName) {
-        greedDescriptionIndex = clamp(greedDescriptionIndex, 0, MAXIMUM_VARIATIONS - 1);
+        greedDescriptionIndex = Math.clamp(greedDescriptionIndex, 0, MAXIMUM_VARIATIONS - 1);
 
         final String RESOURCE_KEY = name() + ".description." + greedDescriptionIndex;
         final PronounData pronounData = new PronounData(gender);

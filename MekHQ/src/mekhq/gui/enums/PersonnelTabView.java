@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020-2025 The MegaMek Team. All Rights Reserved.
+ * Copyright (C) 2020-2026 The MegaMek Team. All Rights Reserved.
  *
  * This file is part of MekHQ.
  *
@@ -40,10 +40,11 @@ public enum PersonnelTabView {
     //region Enum Declarations
     GRAPHIC("PersonnelTabView.GRAPHIC.text", "PersonnelTabView.GRAPHIC.toolTipText"),
     GENERAL("PersonnelTabView.GENERAL.text", "PersonnelTabView.GENERAL.toolTipText"),
-    PILOT_GUNNERY_SKILLS("PersonnelTabView.PILOT_GUNNERY_SKILLS.text",
-          "PersonnelTabView.PILOT_GUNNERY_SKILLS.toolTipText"),
-    PILOT_GUNNERY_SKILLS_II("PersonnelTabView.PILOT_GUNNERY_SKILLS_II.text",
-          "PersonnelTabView.PILOT_GUNNERY_SKILLS_II.toolTipText"),
+    COMBAT("PersonnelTabView.COMBAT.text", "PersonnelTabView.COMBAT.toolTipText"),
+    GUNNERY_PILOT_SKILLS("PersonnelTabView.GUNNERY_PILOT_SKILLS.text",
+          "PersonnelTabView.GUNNERY_PILOT_SKILLS.toolTipText"),
+    GUNNERY_PILOT_SKILLS_II("PersonnelTabView.GUNNERY_PILOT_SKILLS_II.text",
+          "PersonnelTabView.GUNNERY_PILOT_SKILLS_II.toolTipText"),
     INFANTRY_SKILLS("PersonnelTabView.INFANTRY_SKILLS.text", "PersonnelTabView.INFANTRY_SKILLS.toolTipText"),
     TACTICAL_SKILLS("PersonnelTabView.TACTICAL_SKILLS.text", "PersonnelTabView.TACTICAL_SKILLS.toolTipText"),
     TECHNICAL_SKILLS("PersonnelTabView.TECHNICAL_SKILLS.text", "PersonnelTabView.TECHNICAL_SKILLS.toolTipText"),
@@ -56,9 +57,13 @@ public enum PersonnelTabView {
     BIOGRAPHICAL("PersonnelTabView.BIOGRAPHICAL.text", "PersonnelTabView.BIOGRAPHICAL.toolTipText"),
     FLUFF("PersonnelTabView.FLUFF.text", "PersonnelTabView.FLUFF.toolTipText"),
     DATES("PersonnelTabView.DATES.text", "PersonnelTabView.DATES.toolTipText"),
-    FLAGS("PersonnelTabView.FLAGS.text", "PersonnelTabView.FLAGS.toolTipText"),
+    FAMILY("PersonnelTabView.FAMILY.text", "PersonnelTabView.FAMILY.toolTipText"),
     TRANSPORT("PersonnelTabView.TRANSPORT.text", "PersonnelTabView.TRANSPORT.toolTipText"),
     EDUCATION("PersonnelTabView.EDUCATION.text", "PersonnelTabView.EDUCATION.toolTipText"),
+    LOCATION("PersonnelTabView.LOCATION.text", "PersonnelTabView.LOCATION.toolTipText"),
+    FLAGS_A("PersonnelTabView.FLAGS_A.text", "PersonnelTabView.FLAGS_A.toolTipText"),
+    FLAGS_B("PersonnelTabView.FLAGS_B.text", "PersonnelTabView.FLAGS_B.toolTipText"),
+    FLAGS_C("PersonnelTabView.FLAGS_C.text", "PersonnelTabView.FLAGS_C.toolTipText"),
     OTHER("PersonnelTabView.OTHER.text", "PersonnelTabView.OTHER.toolTipText");
     //endregion Enum Declarations
 
@@ -91,12 +96,28 @@ public enum PersonnelTabView {
         return this == GENERAL;
     }
 
+    /**
+     * @deprecated use {@link #isGunneryPilotSkillsII()} instead.
+     */
+    @Deprecated(since = "{SEMVER}", forRemoval = true)
     public boolean isPilotGunnerySkillsII() {
-        return this == PILOT_GUNNERY_SKILLS_II;
+        return this == GUNNERY_PILOT_SKILLS_II;
     }
 
+    public boolean isGunneryPilotSkillsII() {
+        return this == GUNNERY_PILOT_SKILLS_II;
+    }
+
+    /**
+     * @deprecated use {@link #isGunneryPilotSkills()} instead.
+     */
+    @Deprecated(since = "{SEMVER}", forRemoval = true)
     public boolean isPilotGunnerySkills() {
-        return this == PILOT_GUNNERY_SKILLS;
+        return this == GUNNERY_PILOT_SKILLS;
+    }
+
+    public boolean isGunneryPilotSkills() {
+        return this == GUNNERY_PILOT_SKILLS;
     }
 
     public boolean isInfantrySkills() {
@@ -111,6 +132,7 @@ public enum PersonnelTabView {
         return this == TECHNICAL_SKILLS;
     }
 
+    @Deprecated(since = "0.51.0", forRemoval = true)
     public boolean isMedicalSkills() {
         return this == MEDICAL_SKILLS;
     }
@@ -131,10 +153,6 @@ public enum PersonnelTabView {
         return this == DATES;
     }
 
-    public boolean isFlags() {
-        return this == FLAGS;
-    }
-
     public boolean isTransport() {
         return this == TRANSPORT;
     }
@@ -145,6 +163,10 @@ public enum PersonnelTabView {
 
     public boolean isTraits() {
         return this == TRAITS;
+    }
+
+    public boolean isLocation() {
+        return this == LOCATION;
     }
 
     public boolean isOther() {

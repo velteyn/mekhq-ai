@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019-2025 The MegaMek Team. All Rights Reserved.
+ * Copyright (C) 2019-2026 The MegaMek Team. All Rights Reserved.
  *
  * This file is part of MekHQ.
  *
@@ -75,6 +75,7 @@ public class GravDeck extends Part {
     public static final int GRAV_DECK_TYPE_LARGE = 1;
     public static final int GRAV_DECK_TYPE_HUGE = 2;
 
+    @Deprecated(since = "0.51.0", forRemoval = true)
     public GravDeck() {
         this(0, 0, null, GRAV_DECK_TYPE_STANDARD);
     }
@@ -158,12 +159,12 @@ public class GravDeck extends Part {
         if (unit.getEntity() instanceof Jumpship) {
             ((Jumpship) unit.getEntity()).setGravDeckDamageFlag(deckNumber, 1);
 
-            Part spare = campaign.getWarehouse().checkForExistingSparePart(this);
+            Part spare = getWarehouse().checkForExistingSparePart(this);
             if (!salvage) {
-                campaign.getWarehouse().removePart(this);
+                getWarehouse().removePart(this);
             } else if (null != spare) {
                 spare.changeQuantity(1);
-                campaign.getWarehouse().removePart(this);
+                getWarehouse().removePart(this);
             }
             unit.removePart(this);
             Part missing = getMissingPart();

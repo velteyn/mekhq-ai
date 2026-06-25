@@ -38,6 +38,7 @@ import static mekhq.gui.campaignOptions.CampaignOptionsUtilities.createParentPan
 import static mekhq.gui.campaignOptions.CampaignOptionsUtilities.createTipPanelUpdater;
 import static mekhq.gui.campaignOptions.CampaignOptionsUtilities.getCampaignOptionsResourceBundle;
 import static mekhq.gui.campaignOptions.CampaignOptionsUtilities.getImageDirectory;
+import static mekhq.gui.campaignOptions.CampaignOptionsUtilities.getMetadata;
 import static mekhq.utilities.MHQInternationalization.getTextAt;
 
 import java.awt.GridBagConstraints;
@@ -56,6 +57,7 @@ import javax.swing.JSpinner.DefaultEditor;
 import javax.swing.JTextField;
 import javax.swing.SpinnerNumberModel;
 
+import megamek.Version;
 import megamek.client.ui.comboBoxes.MMComboBox;
 import megamek.common.annotations.Nullable;
 import megamek.common.enums.SkillLevel;
@@ -78,8 +80,6 @@ import mekhq.gui.campaignOptions.components.CampaignOptionsSpinner;
 import mekhq.gui.campaignOptions.components.CampaignOptionsStandardPanel;
 import mekhq.module.PersonnelMarketServiceManager;
 import mekhq.module.api.PersonnelMarketMethod;
-
-import static mekhq.gui.campaignOptions.CampaignOptionsUtilities.getMetadata;
 
 /**
  * The {@code MarketsTab} class represents the campaign options tab related to market settings. This tab provides
@@ -158,6 +158,8 @@ public class MarketsTab {
     private JSpinner spnContractMaxSalvagePercentage;
     private JLabel lblDropShipBonusPercentage;
     private JSpinner spnDropShipBonusPercentage;
+    private JLabel lblPityContracts;
+    private JSpinner spnPityContracts;
 
     private JPanel pnlContractPay;
     private JRadioButton btnContractEquipment;
@@ -174,7 +176,6 @@ public class MarketsTab {
     private JSpinner spnWarShipPercent;
     private JRadioButton btnContractPersonnel;
     private JCheckBox useInfantryDoseNotCountBox;
-    private JCheckBox chkMercSizeLimited;
     private JCheckBox chkBLCSaleValue;
     private JCheckBox chkOverageRepaymentInFinalPayment;
     //end Contract Market
@@ -194,25 +195,25 @@ public class MarketsTab {
     }
 
     /**
-     * Initializes the market-related options tabs by setting up configurations for the Personnel Market, Unit Market,
-     * and Contract Market.
+     * Initializes the market-related options tabs by setting up configurations for the Personnel Recruitment, Unit
+     * Market, and Contract Market.
      * <p>
      * This method is invoked internally within the constructor to prepare the various market configurations for use in
      * the UI.
      */
     private void initialize() {
-        initializePersonnelMarket();
+        initializePersonnelRecruitment();
         initializeUnitMarket();
         initializeContractMarket();
     }
 
     /**
-     * Initializes the settings and UI components related to the Personnel Market.
+     * Initializes the settings and UI components related to the Personnel Recruitment.
      * <p>
-     * This includes setting up labels, combo boxes for selecting the personnel market type, checkboxes for additional
+     * This includes setting up labels, combo boxes for selecting the recruitment style, checkboxes for additional
      * options, and spinners for configuring removal targets.
      */
-    private void initializePersonnelMarket() {
+    private void initializePersonnelRecruitment() {
         pnlPersonnelMarketGeneralOptions = new JPanel();
         lblPersonnelMarketType = new JLabel();
         comboPersonnelMarketType = new MMComboBox<>("comboPersonnelMarketType", getPersonnelMarketTypeOptions());
@@ -564,6 +565,8 @@ public class MarketsTab {
         spnContractMaxSalvagePercentage = new JSpinner();
         lblDropShipBonusPercentage = new JLabel();
         spnDropShipBonusPercentage = new JSpinner();
+        lblPityContracts = new JLabel();
+        spnPityContracts = new JSpinner();
 
         pnlContractPay = new JPanel();
         btnContractEquipment = new JRadioButton();
@@ -580,7 +583,6 @@ public class MarketsTab {
         spnWarShipPercent = new JSpinner();
         btnContractPersonnel = new JRadioButton();
         useInfantryDoseNotCountBox = new JCheckBox();
-        chkMercSizeLimited = new JCheckBox();
         chkBLCSaleValue = new JCheckBox();
         chkOverageRepaymentInFinalPayment = new JCheckBox();
     }
@@ -692,6 +694,13 @@ public class MarketsTab {
         spnDropShipBonusPercentage.addMouseListener(createTipPanelUpdater(contractMarketHeader,
               "DropShipBonusPercentage"));
 
+        lblPityContracts = new CampaignOptionsLabel("PityContracts", getMetadata(new Version(0, 51, 0)));
+        lblPityContracts.addMouseListener(createTipPanelUpdater(contractMarketHeader,
+              "PityContracts"));
+        spnPityContracts = new CampaignOptionsSpinner("PityContracts", 4, 0, 20, 1);
+        spnPityContracts.addMouseListener(createTipPanelUpdater(contractMarketHeader,
+              "PityContracts"));
+
         // Layout the Panel
         final JPanel panel = new CampaignOptionsStandardPanel("ContractMarketGeneralOptionsPanel");
         final GridBagConstraints layout = new CampaignOptionsGridBagConstraints(panel);
@@ -747,6 +756,12 @@ public class MarketsTab {
         layout.gridx++;
         panel.add(spnDropShipBonusPercentage, layout);
 
+        layout.gridx = 0;
+        layout.gridy++;
+        panel.add(lblPityContracts, layout);
+        layout.gridx++;
+        panel.add(spnPityContracts, layout);
+
         return panel;
     }
 
@@ -762,17 +777,15 @@ public class MarketsTab {
         // Contents
         btnContractEquipment = new JRadioButton(getTextAt(getCampaignOptionsResourceBundle(),
               "lblContractEquipment.text"));
-        spnDropShipBonusPercentage.addMouseListener(createTipPanelUpdater(contractMarketHeader, "ContractEquipment"));
         btnContractEquipment.setToolTipText(getTextAt(getCampaignOptionsResourceBundle(),
               "lblContractEquipment.tooltip"));
-        spnDropShipBonusPercentage.addMouseListener(createTipPanelUpdater(contractMarketHeader, "ContractEquipment"));
+        btnContractEquipment.addMouseListener(createTipPanelUpdater(contractMarketHeader, "ContractEquipment"));
 
         btnContractPersonnel = new JRadioButton(getTextAt(getCampaignOptionsResourceBundle(),
               "lblContractPersonnel.text"));
-        spnDropShipBonusPercentage.addMouseListener(createTipPanelUpdater(contractMarketHeader, "ContractPersonnel"));
         btnContractPersonnel.setToolTipText(getTextAt(getCampaignOptionsResourceBundle(),
               "lblContractPersonnel.tooltip"));
-        spnDropShipBonusPercentage.addMouseListener(createTipPanelUpdater(contractMarketHeader, "ContractPersonnel"));
+        btnContractPersonnel.addMouseListener(createTipPanelUpdater(contractMarketHeader, "ContractPersonnel"));
 
         ButtonGroup contractGroup = new ButtonGroup();
         contractGroup.add(btnContractEquipment);
@@ -834,9 +847,6 @@ public class MarketsTab {
         useInfantryDoseNotCountBox = new CampaignOptionsCheckBox("UseInfantryDoseNotCountBox");
         useInfantryDoseNotCountBox.addMouseListener(createTipPanelUpdater(contractMarketHeader,
               "UseInfantryDoseNotCountBox"));
-
-        chkMercSizeLimited = new CampaignOptionsCheckBox("MercSizeLimited");
-        chkMercSizeLimited.addMouseListener(createTipPanelUpdater(contractMarketHeader, "MercSizeLimited"));
 
         chkOverageRepaymentInFinalPayment = new CampaignOptionsCheckBox("OverageRepaymentInFinalPayment");
         chkOverageRepaymentInFinalPayment.addMouseListener(createTipPanelUpdater(contractMarketHeader,
@@ -904,10 +914,6 @@ public class MarketsTab {
 
         layout.gridx = 0;
         layout.gridy++;
-        panel.add(chkMercSizeLimited, layout);
-
-        layout.gridx = 0;
-        layout.gridy++;
         panel.add(chkOverageRepaymentInFinalPayment, layout);
 
         return panel;
@@ -965,6 +971,7 @@ public class MarketsTab {
         chkContractMarketReportRefresh.setSelected(options.isContractMarketReportRefresh());
         spnContractMaxSalvagePercentage.setValue(options.getContractMaxSalvagePercentage());
         spnDropShipBonusPercentage.setValue(options.getDropShipBonusPercentage());
+        spnPityContracts.setValue(options.getPityContracts());
         if (options.isEquipmentContractBase()) {
             btnContractEquipment.setSelected(true);
         } else {
@@ -978,7 +985,6 @@ public class MarketsTab {
         spnJumpShipPercent.setValue(options.getJumpShipContractPercent());
         spnWarShipPercent.setValue(options.getWarShipContractPercent());
         useInfantryDoseNotCountBox.setSelected(options.isInfantryDontCount());
-        chkMercSizeLimited.setSelected(options.isMercSizeLimited());
         chkBLCSaleValue.setSelected(options.isBLCSaleValue());
         chkOverageRepaymentInFinalPayment.setSelected(options.isOverageRepaymentInFinalPayment());
     }
@@ -1039,6 +1045,7 @@ public class MarketsTab {
         options.setContractMarketReportRefresh(chkContractMarketReportRefresh.isSelected());
         options.setContractMaxSalvagePercentage((int) spnContractMaxSalvagePercentage.getValue());
         options.setDropShipBonusPercentage((int) spnDropShipBonusPercentage.getValue());
+        options.setPityContracts((int) spnPityContracts.getValue());
         options.setEquipmentContractBase(btnContractEquipment.isSelected());
         options.setEquipmentContractPercent((double) spnEquipPercent.getValue());
         options.setDropShipContractPercent((double) spnDropShipPercent.getValue());
@@ -1047,7 +1054,6 @@ public class MarketsTab {
         options.setUseAlternatePaymentMode(chkUseAlternatePaymentMode.isSelected());
         options.setUseDiminishingContractPay(chkUseDiminishingContractPay.isSelected());
         options.setEquipmentContractSaleValue(chkEquipContractSaleValue.isSelected());
-        options.setMercSizeLimited(chkMercSizeLimited.isSelected());
         options.setBLCSaleValue(chkBLCSaleValue.isSelected());
         options.setUseInfantryDontCount(useInfantryDoseNotCountBox.isSelected());
         options.setOverageRepaymentInFinalPayment(chkOverageRepaymentInFinalPayment.isSelected());

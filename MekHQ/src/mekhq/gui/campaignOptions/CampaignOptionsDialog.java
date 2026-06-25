@@ -47,12 +47,13 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 
+import megamek.client.ui.dialogs.buttonDialogs.AbstractButtonDialog;
 import megamek.common.annotations.Nullable;
 import mekhq.CampaignPreset;
+import mekhq.MekHQ;
 import mekhq.campaign.Campaign;
 import mekhq.campaign.campaignOptions.CampaignOptions;
 import mekhq.gui.FileDialogs;
-import mekhq.gui.baseComponents.AbstractMHQButtonDialog;
 import mekhq.gui.campaignOptions.components.CampaignOptionsButton;
 
 /**
@@ -60,7 +61,7 @@ import mekhq.gui.campaignOptions.components.CampaignOptionsButton;
  * in MekHQ. It provides a user interface for accessing, editing, and applying various gameplay-related settings for a
  * campaign. The dialog also supports applying presets and saving settings for future use.
  * <p>
- * This dialog is an extension of {@link AbstractMHQButtonDialog} and integrates closely with a {@link Campaign}
+ * This dialog is an extension of {@link AbstractButtonDialog} and integrates closely with a {@link Campaign}
  * instance, representing the current or a predefined campaign setup. It facilitates user interaction for fine-tuning
  * the game campaign experience.
  * </p>
@@ -73,7 +74,7 @@ import mekhq.gui.campaignOptions.components.CampaignOptionsButton;
  *   <li>Visual notifications, such as a notice about StratCon activation during the campaign.</li>
  * </ul>
  */
-public class CampaignOptionsDialog extends AbstractMHQButtonDialog {
+public class CampaignOptionsDialog extends AbstractButtonDialog {
     private final Campaign campaign;
     private final CampaignOptionsPane campaignOptionsPane;
     private final CampaignOptionsDialogMode mode;
@@ -145,6 +146,7 @@ public class CampaignOptionsDialog extends AbstractMHQButtonDialog {
      * @param campaign the {@link Campaign} instance whose options will be displayed and edited
      * @param preset   an optional {@link CampaignPreset} to apply initial settings (maybe {@code null})
      */
+    @Deprecated(since = "0.51.0", forRemoval = true)
     public CampaignOptionsDialog(final Campaign campaign, @Nullable CampaignPreset preset) {
         super(null,
               false,
@@ -340,5 +342,10 @@ public class CampaignOptionsDialog extends AbstractMHQButtonDialog {
               null,
               options,
               options[0]);
+    }
+
+    @Override
+    protected void setPreferences() throws Exception {
+        setPreferences(MekHQ.getMHQPreferences().forClass(getClass()));
     }
 }

@@ -75,6 +75,7 @@ public class StratConFacility implements Cloneable {
     private FacilityType facilityType;
     private String userDescription;
     private boolean visible;
+    private boolean isAvailable = true;
     private int aggroRating;
     private List<String> sharedModifiers = new ArrayList<>();
     private List<String> localModifiers = new ArrayList<>();
@@ -104,6 +105,7 @@ public class StratConFacility implements Cloneable {
         clone.displayableName = displayableName;
         clone.facilityType = facilityType;
         clone.visible = visible;
+        clone.isAvailable = isAvailable;
         clone.sharedModifiers = new ArrayList<>(sharedModifiers);
         clone.localModifiers = new ArrayList<>(localModifiers);
         clone.setCapturedDefinition(capturedDefinition);
@@ -160,6 +162,7 @@ public class StratConFacility implements Cloneable {
         return displayableName;
     }
 
+    @Deprecated(since = "0.51.0", forRemoval = true)
     public void setDisplayableName(String displayableName) {
         this.displayableName = displayableName;
     }
@@ -168,6 +171,7 @@ public class StratConFacility implements Cloneable {
         return facilityType;
     }
 
+    @Deprecated(since = "0.51.0", forRemoval = true)
     public void setFacilityType(FacilityType facilityType) {
         this.facilityType = facilityType;
     }
@@ -182,6 +186,18 @@ public class StratConFacility implements Cloneable {
 
     public boolean isVisible() {
         return (owner == ForceAlignment.Allied) || visible;
+    }
+
+    public boolean getIsAvailable() {
+        return isAvailable;
+    }
+
+    public void setIsAvailable(boolean isAvailable) {
+        this.isAvailable = isAvailable;
+    }
+
+    public boolean isAvailable() {
+        return isAvailable;
     }
 
     /**
@@ -206,10 +222,12 @@ public class StratConFacility implements Cloneable {
         this.localModifiers = localModifiers;
     }
 
+    @Deprecated(since = "0.51.0", forRemoval = true)
     public int getAggroRating() {
         return aggroRating;
     }
 
+    @Deprecated(since = "0.51.0", forRemoval = true)
     public void setAggroRating(int rating) {
         aggroRating = rating;
     }
@@ -238,6 +256,7 @@ public class StratConFacility implements Cloneable {
         ownershipChangeScore--;
     }
 
+    @Deprecated(since = "0.51.0", forRemoval = true)
     public void clearOwnershipChangeScore() {
         ownershipChangeScore = 0;
     }

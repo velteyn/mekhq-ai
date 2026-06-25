@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 The MegaMek Team. All Rights Reserved.
+ * Copyright (C) 2025-2026 The MegaMek Team. All Rights Reserved.
  *
  * This file is part of MekHQ.
  *
@@ -34,6 +34,8 @@
 package mekhq.campaign.parts;
 
 
+import java.io.PrintWriter;
+
 import megamek.common.SimpleTechLevel;
 import megamek.common.TechAdvancement;
 import megamek.common.annotations.Nullable;
@@ -54,8 +56,6 @@ import mekhq.utilities.MHQXMLUtility;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-import java.io.PrintWriter;
-
 /**
  * Represents a single floor of a building hex in an AbstractBuildingEntity.
  * Each BuildingLocation corresponds to one location in the entity's location array.
@@ -66,8 +66,8 @@ public class BuildingLocation extends Part {
     public static final TechAdvancement TECH_ADVANCEMENT = new TechAdvancement(TechBase.ALL)
             .setAdvancement(2300, 2350, 2400)
             .setApproximate(true, false, false)
-            .setPrototypeFactions(Faction.TH)
-            .setProductionFactions(Faction.TH)
+            .setPrototypeFactions(Faction.TH, Faction.CS)
+            .setProductionFactions(Faction.TH, Faction.CS)
             .setTechRating(TechRating.C)
             .setAvailability(AvailabilityValue.A,
                     AvailabilityValue.A,
@@ -108,10 +108,12 @@ public class BuildingLocation extends Part {
         return loc;
     }
 
+    @Deprecated(since = "0.51.0", forRemoval = true)
     public int getCFDamage() {
         return cfDamage;
     }
 
+    @Deprecated(since = "0.51.0", forRemoval = true)
     public int getArmorDamage() {
         return armorDamage;
     }
@@ -214,12 +216,12 @@ public class BuildingLocation extends Part {
     public void remove(boolean salvage) {
         if (null != unit) {
             unit.getEntity().setInternal(IArmorState.ARMOR_DESTROYED, loc);
-            Part spare = campaign.getWarehouse().checkForExistingSparePart(this);
+            Part spare = getWarehouse().checkForExistingSparePart(this);
             if (!salvage) {
-                campaign.getWarehouse().removePart(this);
+                getWarehouse().removePart(this);
             } else if (null != spare) {
                 spare.changeQuantity(1);
-                campaign.getWarehouse().removePart(this);
+                getWarehouse().removePart(this);
             }
             unit.removePart(this);
         }
@@ -236,12 +238,12 @@ public class BuildingLocation extends Part {
                 // Update CF damage
                 int originalInternal = unit.getEntity().getOInternal(loc);
                 int internal = unit.getEntity().getInternal(loc);
-                cfDamage = originalInternal - Math.min(originalInternal, Math.max(internal, 0));
+                cfDamage = originalInternal - Math.clamp(internal, 0, originalInternal);
 
                 // Update armor damage
                 int originalArmor = unit.getEntity().getOArmor(loc);
                 int armor = unit.getEntity().getArmor(loc);
-                armorDamage = originalArmor - Math.min(originalArmor, Math.max(armor, 0));
+                armorDamage = originalArmor - Math.clamp(armor, 0, originalArmor);
             }
         }
     }

@@ -32,7 +32,6 @@
  */
 package mekhq.campaign.randomEvents.personalities.enums;
 
-import static megamek.codeUtilities.MathUtility.clamp;
 import static mekhq.campaign.randomEvents.personalities.enums.PersonalityTraitType.SOCIAL;
 import static mekhq.utilities.MHQInternationalization.getFormattedTextAt;
 import static mekhq.utilities.MHQInternationalization.getTextAt;
@@ -40,6 +39,7 @@ import static mekhq.utilities.MHQInternationalization.getTextAt;
 import megamek.common.enums.Gender;
 import megamek.logging.MMLogger;
 import mekhq.campaign.personnel.PronounData;
+import mekhq.campaign.randomEvents.personalities.PersonalityTrait;
 
 /**
  * Represents various levels and traits of social skills in a personality.
@@ -51,7 +51,7 @@ import mekhq.campaign.personnel.PronounData;
  * <p>Some traits, referred to as "Major Traits," denote stronger personality attributes
  * and are to be handled distinctly. These traits are always listed at the end of the enumeration.</p>
  */
-public enum Social {
+public enum Social implements PersonalityTrait {
     // region Enum Declarations
     NONE(false, false),
     APATHETIC(false, false),
@@ -133,6 +133,7 @@ public enum Social {
      * @author Illiani
      * @since 0.50.06
      */
+    @Deprecated(since = "0.51.0", forRemoval = true)
     public String getPersonalityTraitTypeLabel() {
         return getPersonalityTraitType().getLabel();
     }
@@ -172,7 +173,7 @@ public enum Social {
      */
     public String getDescription(int socialDescriptionIndex, final Gender gender,
           final String givenName) {
-        socialDescriptionIndex = clamp(socialDescriptionIndex, 0, MAXIMUM_VARIATIONS - 1);
+        socialDescriptionIndex = Math.clamp(socialDescriptionIndex, 0, MAXIMUM_VARIATIONS - 1);
 
         final String RESOURCE_KEY = name() + ".description." + socialDescriptionIndex;
         final PronounData pronounData = new PronounData(gender);

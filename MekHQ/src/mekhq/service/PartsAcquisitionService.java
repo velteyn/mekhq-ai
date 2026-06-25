@@ -37,12 +37,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import megamek.common.rolls.TargetRoll;
 import mekhq.campaign.Campaign;
 import mekhq.campaign.finances.Money;
 import mekhq.campaign.parts.Part;
 import mekhq.campaign.parts.PartInventory;
 import mekhq.campaign.personnel.Person;
+import mekhq.campaign.personnel.skills.SkillCheck;
 import mekhq.campaign.unit.Unit;
 import mekhq.campaign.work.IAcquisitionWork;
 
@@ -65,6 +65,7 @@ public class PartsAcquisitionService {
         return acquisitionMap;
     }
 
+    @Deprecated(since = "0.51.0", forRemoval = true)
     public static void setAcquisitionMap(Map<String, List<IAcquisitionWork>> acquisitionMap) {
         PartsAcquisitionService.acquisitionMap = acquisitionMap;
     }
@@ -73,6 +74,7 @@ public class PartsAcquisitionService {
         return partCountInfoMap;
     }
 
+    @Deprecated(since = "0.51.0", forRemoval = true)
     public static void setPartCountInfoMap(Map<String, PartCountInfo> partCountInfoMap) {
         PartsAcquisitionService.partCountInfoMap = partCountInfoMap;
     }
@@ -81,6 +83,7 @@ public class PartsAcquisitionService {
         return inTransitCount;
     }
 
+    @Deprecated(since = "0.51.0", forRemoval = true)
     public static void setInTransitCount(int inTransitCount) {
         PartsAcquisitionService.inTransitCount = inTransitCount;
     }
@@ -89,6 +92,7 @@ public class PartsAcquisitionService {
         return onOrderCount;
     }
 
+    @Deprecated(since = "0.51.0", forRemoval = true)
     public static void setOnOrderCount(int onOrderCount) {
         PartsAcquisitionService.onOrderCount = onOrderCount;
     }
@@ -97,6 +101,7 @@ public class PartsAcquisitionService {
         return omniPodCount;
     }
 
+    @Deprecated(since = "0.51.0", forRemoval = true)
     public static void setOmniPodCount(int omniPodCount) {
         PartsAcquisitionService.omniPodCount = omniPodCount;
     }
@@ -105,6 +110,7 @@ public class PartsAcquisitionService {
         return missingCount;
     }
 
+    @Deprecated(since = "0.51.0", forRemoval = true)
     public static void setMissingCount(int missingCount) {
         PartsAcquisitionService.missingCount = missingCount;
     }
@@ -113,6 +119,7 @@ public class PartsAcquisitionService {
         return requiredCount;
     }
 
+    @Deprecated(since = "0.51.0", forRemoval = true)
     public static void setRequiredCount(int requiredCount) {
         PartsAcquisitionService.requiredCount = requiredCount;
     }
@@ -121,6 +128,7 @@ public class PartsAcquisitionService {
         return unavailableCount;
     }
 
+    @Deprecated(since = "0.51.0", forRemoval = true)
     public static void setUnavailableCount(int unavailableCount) {
         PartsAcquisitionService.unavailableCount = unavailableCount;
     }
@@ -129,6 +137,7 @@ public class PartsAcquisitionService {
         return missingTotalPrice;
     }
 
+    @Deprecated(since = "0.51.0", forRemoval = true)
     public static void setMissingTotalPrice(Money missingTotalPrice) {
         PartsAcquisitionService.missingTotalPrice = missingTotalPrice;
     }
@@ -158,9 +167,8 @@ public class PartsAcquisitionService {
         Person admin = campaign.getLogisticsPerson();
 
         for (List<IAcquisitionWork> awList : acquisitionMap.values()) {
-            IAcquisitionWork awFirst = awList.get(0);
+            IAcquisitionWork awFirst = awList.getFirst();
             Part part = awFirst.getAcquisitionPart();
-            TargetRoll target = campaign.getTargetForAcquisition(awFirst, admin, true, false);
             PartCountInfo pci = new PartCountInfo();
 
             PartInventory inventories = campaign.getPartInventory(part);
@@ -187,17 +195,17 @@ public class PartsAcquisitionService {
             pci.setRequiredCount(awList.size());
             pci.setStickerPrice(part.getStickerPrice());
             pci.setMissingCount(missing);
+            pci.setOmniPodCount(omniPod);
+            pci.setInTransitCount(inTransit);
+            pci.setOnOrderCount(onOrder);
 
-            if (target.getValue() == TargetRoll.IMPOSSIBLE) {
+            SkillCheck skillCheck = campaign.checkAcquisition(awFirst, admin, true);
+            if (skillCheck.getTargetNumber().isImpossible()) {
                 pci.setCanBeAcquired(false);
-                pci.setFailedMessage(target.getPlainDesc());
-            } else {
-                pci.setInTransitCount(inTransit);
-                pci.setOnOrderCount(onOrder);
-                pci.setOmniPodCount(omniPod);
+                pci.setFailedMessage(skillCheck.getTargetNumber().getPlainDesc());
             }
 
-            partCountInfoMap.put(awList.get(0).getAcquisitionDisplayName(), pci);
+            partCountInfoMap.put(awList.getFirst().getAcquisitionDisplayName(), pci);
         }
 
         inTransitCount = 0;

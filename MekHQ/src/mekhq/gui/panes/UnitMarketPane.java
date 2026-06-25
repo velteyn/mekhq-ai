@@ -57,6 +57,7 @@ import megamek.client.ui.preferences.PreferencesNode;
 import megamek.common.annotations.Nullable;
 import megamek.common.compute.Compute;
 import megamek.common.icons.Camouflage;
+import megamek.common.ui.FastJScrollPane;
 import megamek.common.units.Entity;
 import megamek.common.units.UnitType;
 import megamek.common.util.sorter.NaturalOrderComparator;
@@ -70,7 +71,6 @@ import mekhq.gui.baseComponents.AbstractMHQSplitPane;
 import mekhq.gui.model.UnitMarketTableModel;
 import mekhq.gui.sorter.FormattedNumberSorter;
 import mekhq.gui.sorter.WeightClassSorter;
-import mekhq.gui.utilities.JScrollPaneWithSpeed;
 import mekhq.utilities.ReportingUtilities;
 
 public class UnitMarketPane extends AbstractMHQSplitPane {
@@ -395,7 +395,7 @@ public class UnitMarketPane extends AbstractMHQSplitPane {
               !getCampaign().getCampaignOptions().isInstantUnitMarketDelivery());
         getMarketTable().getSelectionModel().addListSelectionListener(evt -> updateDisplay());
 
-        final JScrollPane marketTableScrollPane = new JScrollPaneWithSpeed(getMarketTable(),
+        final JScrollPane marketTableScrollPane = new FastJScrollPane(getMarketTable(),
               ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED,
               ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
         marketTableScrollPane.setName("marketTableScrollPane");
@@ -518,7 +518,8 @@ public class UnitMarketPane extends AbstractMHQSplitPane {
                               entity.getShortName()));
         }
 
-        finalizeEntityAcquisition(offers, getCampaign().getCampaignOptions().isInstantUnitMarketDelivery());
+        boolean isInstantDelivery = getCampaign().getCampaignOptions().isInstantUnitMarketDelivery();
+        finalizeEntityAcquisition(offers, isInstantDelivery);
     }
 
     public void addSelectedOffers() {
@@ -538,9 +539,12 @@ public class UnitMarketPane extends AbstractMHQSplitPane {
      */
     private void finalizeEntityAcquisition(final List<UnitMarketOffer> offers, final boolean instantDelivery) {
         for (final UnitMarketOffer offer : offers) {
+            boolean isEmployerMarket = offer.getMarketType().isEmployer();
+            int transitDuration = instantDelivery || isEmployerMarket ? 0 : offer.getTransitDuration();
+
             getCampaign().addNewUnit(offer.getEntity(),
                   false,
-                  instantDelivery ? 0 : offer.getTransitDuration(),
+                  transitDuration,
                   UnitMarketType.getQuality(campaign, offer.getMarketType()));
 
             if (!instantDelivery) {

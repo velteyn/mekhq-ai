@@ -52,6 +52,7 @@ import java.util.List;
 import java.util.Map;
 import javax.swing.*;
 
+import megamek.Version;
 import megamek.client.generator.RandomGenderGenerator;
 import megamek.client.generator.RandomNameGenerator;
 import megamek.client.ui.comboBoxes.MMComboBox;
@@ -114,12 +115,15 @@ public class BiographyTab {
     private JCheckBox chkAnnounceBirthdays;
     private JCheckBox chkAnnounceChildBirthdays;
     private JCheckBox chkAnnounceRecruitmentAnniversaries;
+    private JCheckBox chkAnnounceRetireeDeath;
+    private JCheckBox chkAnnounceRetireeDeathExpanded;
     private JPanel pnlLifeEvents;
     private JCheckBox chkShowLifeEventDialogBirths;
     private JCheckBox chkShowLifeEventDialogComingOfAge;
     private JCheckBox chkShowLifeEventDialogCelebrations;
     private JPanel pnlComingOfAge;
     private JCheckBox chkVeterancySPAs;
+    private JCheckBox chkAwardRelevantVeterancySPAs;
     private JCheckBox chkComingOfAgeSPAs;
     private JCheckBox chkRewardComingOfAgeRPSkills;
     //end General Tab
@@ -128,6 +132,7 @@ public class BiographyTab {
     private CampaignOptionsHeaderPanel backgroundHeader;
     private JPanel pnlRandomBackgrounds;
     private JCheckBox chkUseRandomPersonalities;
+    private JCheckBox chkUsePersonalityTagsOnly;
     private JCheckBox chkUseRandomPersonalityReputation;
     private JCheckBox chkUseReasoningXpMultiplier;
     private JCheckBox chkUseSimulatedRelationships;
@@ -207,6 +212,8 @@ public class BiographyTab {
     private JCheckBox chkAssignPortraitOnRoleChange;
     private JCheckBox chkAllowDuplicatePortraits;
     private JCheckBox chkUseGenderedPortraitsOnly;
+    private JCheckBox chkNoRandomPortraitsForChildren;
+    private JCheckBox chkChildPortraitsWhenComingOfAge;
     //end Name and Portrait Tab
 
     //start Rank Tab
@@ -267,6 +274,8 @@ public class BiographyTab {
         chkAssignPortraitOnRoleChange = new JCheckBox();
         chkAllowDuplicatePortraits = new JCheckBox();
         chkUseGenderedPortraitsOnly = new JCheckBox();
+        chkNoRandomPortraitsForChildren = new JCheckBox();
+        chkChildPortraitsWhenComingOfAge = new JCheckBox();
 
         pnlRandomPortrait = new JPanel();
         personnelRoles = PersonnelRole.getCombatRoles();
@@ -347,6 +356,7 @@ public class BiographyTab {
     private void initializeBackgroundsTab() {
         pnlRandomBackgrounds = new JPanel();
         chkUseRandomPersonalities = new JCheckBox();
+        chkUsePersonalityTagsOnly = new JCheckBox();
         chkUseRandomPersonalityReputation = new JCheckBox();
         chkUseReasoningXpMultiplier = new JCheckBox();
         chkUseSimulatedRelationships = new JCheckBox();
@@ -391,6 +401,8 @@ public class BiographyTab {
         chkAnnounceBirthdays = new JCheckBox();
         chkAnnounceChildBirthdays = new JCheckBox();
         chkAnnounceRecruitmentAnniversaries = new JCheckBox();
+        chkAnnounceRetireeDeath = new JCheckBox();
+        chkAnnounceRetireeDeathExpanded = new JCheckBox();
 
         pnlLifeEvents = new JPanel();
         chkShowLifeEventDialogBirths = new JCheckBox();
@@ -399,6 +411,7 @@ public class BiographyTab {
 
         pnlComingOfAge = new JPanel();
         chkVeterancySPAs = new JCheckBox();
+        chkAwardRelevantVeterancySPAs = new JCheckBox();
         chkComingOfAgeSPAs = new JCheckBox();
         chkRewardComingOfAgeRPSkills = new JCheckBox();
     }
@@ -528,6 +541,14 @@ public class BiographyTab {
         chkAnnounceRecruitmentAnniversaries = new CampaignOptionsCheckBox("AnnounceRecruitmentAnniversaries");
         chkAnnounceRecruitmentAnniversaries.addMouseListener(createTipPanelUpdater(generalHeader,
               "AnnounceRecruitmentAnniversaries"));
+        chkAnnounceRetireeDeath = new CampaignOptionsCheckBox("AnnounceRetireeDeath",
+              getMetadata(new Version(0, 51, 0)));
+        chkAnnounceRetireeDeath.addMouseListener(createTipPanelUpdater(generalHeader,
+              "AnnounceRetireeDeath"));
+        chkAnnounceRetireeDeathExpanded = new CampaignOptionsCheckBox("AnnounceRetireeDeathExpanded",
+              getMetadata(new Version(0, 51, 0)));
+        chkAnnounceRetireeDeathExpanded.addMouseListener(createTipPanelUpdater(generalHeader,
+              "AnnounceRetireeDeathExpanded"));
         chkAnnounceOfficersOnly = new CampaignOptionsCheckBox("AnnounceOfficersOnly");
         chkAnnounceOfficersOnly.addMouseListener(createTipPanelUpdater(generalHeader, "AnnounceOfficersOnly"));
         chkAnnounceChildBirthdays = new CampaignOptionsCheckBox("AnnounceChildBirthdays",
@@ -552,6 +573,12 @@ public class BiographyTab {
 
         layoutParent.gridy++;
         panel.add(chkAnnounceChildBirthdays, layoutParent);
+
+        layoutParent.gridy++;
+        panel.add(chkAnnounceRetireeDeath, layoutParent);
+
+        layoutParent.gridy++;
+        panel.add(chkAnnounceRetireeDeathExpanded, layoutParent);
 
         return panel;
     }
@@ -592,6 +619,11 @@ public class BiographyTab {
               getMetadata(MILESTONE_BEFORE_METADATA, CampaignOptionFlag.RECOMMENDED));
         chkVeterancySPAs.addMouseListener(createTipPanelUpdater(generalHeader, "VeterancySPAs"));
 
+        chkAwardRelevantVeterancySPAs = new CampaignOptionsCheckBox("AwardRelevantVeterancySPAs",
+              getMetadata(new Version(0, 51, 0), CampaignOptionFlag.IMPORTANT));
+        chkAwardRelevantVeterancySPAs.addMouseListener(createTipPanelUpdater(generalHeader,
+              "AwardRelevantVeterancySPAs"));
+
         chkComingOfAgeSPAs = new CampaignOptionsCheckBox("ComingOfAgeAbilities",
               getMetadata(null, CampaignOptionFlag.RECOMMENDED));
         chkComingOfAgeSPAs.addMouseListener(createTipPanelUpdater(generalHeader, "ComingOfAgeAbilities"));
@@ -609,6 +641,9 @@ public class BiographyTab {
         layoutParent.gridx = 0;
         layoutParent.gridy = 0;
         panel.add(chkVeterancySPAs, layoutParent);
+
+        layoutParent.gridy++;
+        panel.add(chkAwardRelevantVeterancySPAs, layoutParent);
 
         layoutParent.gridy++;
         panel.add(chkComingOfAgeSPAs, layoutParent);
@@ -632,7 +667,7 @@ public class BiographyTab {
         // Header
         backgroundHeader = new CampaignOptionsHeaderPanel("BackgroundsTab",
               getImageDirectory() + "logo_nueva_castile.png",
-              3);
+              4);
 
         // Contents
         pnlRandomOriginOptions = createRandomOriginOptionsPanel();
@@ -677,6 +712,9 @@ public class BiographyTab {
         chkUseRandomPersonalities = new CampaignOptionsCheckBox("UseRandomPersonalities",
               getMetadata(LEGACY_RULE_BEFORE_METADATA, CampaignOptionFlag.DOCUMENTED));
         chkUseRandomPersonalities.addMouseListener(createTipPanelUpdater(backgroundHeader, "UseRandomPersonalities"));
+        chkUsePersonalityTagsOnly = new CampaignOptionsCheckBox("UsePersonalityTagsOnly",
+              getMetadata(new Version(0, 51, 1), CampaignOptionFlag.IMPORTANT));
+        chkUsePersonalityTagsOnly.addMouseListener(createTipPanelUpdater(backgroundHeader, "UsePersonalityTagsOnly"));
         chkUseRandomPersonalityReputation = new CampaignOptionsCheckBox("UseRandomPersonalityReputation");
         chkUseRandomPersonalityReputation.addMouseListener(createTipPanelUpdater(backgroundHeader,
               "UseRandomPersonalityReputation"));
@@ -696,6 +734,9 @@ public class BiographyTab {
         layout.gridx = 0;
         layout.gridy = 0;
         panel.add(chkUseRandomPersonalities, layout);
+
+        layout.gridy++;
+        panel.add(chkUsePersonalityTagsOnly, layout);
 
         layout.gridy++;
         panel.add(chkUseRandomPersonalityReputation, layout);
@@ -1364,6 +1405,16 @@ public class BiographyTab {
         chkUseGenderedPortraitsOnly.addMouseListener(createTipPanelUpdater(nameAndPortraitGenerationHeader,
               "UseGenderedPortraitsOnly"));
 
+        chkNoRandomPortraitsForChildren = new CampaignOptionsCheckBox("NoRandomPortraitsForChildren",
+              getMetadata(new Version(0, 51, 0)));
+        chkNoRandomPortraitsForChildren.addMouseListener(createTipPanelUpdater(nameAndPortraitGenerationHeader,
+              "NoRandomPortraitsForChildren"));
+
+        chkChildPortraitsWhenComingOfAge = new CampaignOptionsCheckBox("ChildPortraitsWhenComingOfAge",
+              getMetadata(new Version(0, 51, 0)));
+        chkChildPortraitsWhenComingOfAge.addMouseListener(createTipPanelUpdater(nameAndPortraitGenerationHeader,
+              "ChildPortraitsWhenComingOfAge"));
+
         chkUseOriginFactionForNames = new CampaignOptionsCheckBox("UseOriginFactionForNames");
         chkUseOriginFactionForNames.addMouseListener(createTipPanelUpdater(nameAndPortraitGenerationHeader,
               "UseOriginFactionForNames"));
@@ -1394,6 +1445,13 @@ public class BiographyTab {
         panelTop.add(lblFactionNames, layoutTop);
         layoutTop.gridx++;
         panelTop.add(comboFactionNames, layoutTop);
+
+        layoutTop.gridx = 0;
+        layoutTop.gridy++;
+        panelTop.add(chkNoRandomPortraitsForChildren, layoutTop);
+
+        layoutTop.gridy++;
+        panelTop.add(chkChildPortraitsWhenComingOfAge, layoutTop);
 
         final JPanel panel = new CampaignOptionsStandardPanel("NameAndPortraitGenerationTab", true);
         final GridBagConstraints layoutParent = new CampaignOptionsGridBagConstraints(panel);
@@ -1553,15 +1611,19 @@ public class BiographyTab {
         chkAnnounceBirthdays.setSelected(options.isAnnounceBirthdays());
         chkAnnounceChildBirthdays.setSelected(options.isAnnounceChildBirthdays());
         chkAnnounceRecruitmentAnniversaries.setSelected(options.isAnnounceRecruitmentAnniversaries());
+        chkAnnounceRetireeDeath.setSelected(options.isAnnounceRetireeDeath());
+        chkAnnounceRetireeDeathExpanded.setSelected(options.isAnnounceRetireeDeathExpanded());
         chkShowLifeEventDialogBirths.setSelected(options.isShowLifeEventDialogBirths());
         chkShowLifeEventDialogComingOfAge.setSelected(options.isShowLifeEventDialogComingOfAge());
         chkShowLifeEventDialogCelebrations.setSelected(options.isShowLifeEventDialogCelebrations());
         chkVeterancySPAs.setSelected(options.isAwardVeterancySPAs());
+        chkAwardRelevantVeterancySPAs.setSelected(options.isAwardRelevantVeterancySPAs());
         chkComingOfAgeSPAs.setSelected(options.isRewardComingOfAgeAbilities());
         chkRewardComingOfAgeRPSkills.setSelected(options.isRewardComingOfAgeRPSkills());
 
         // Backgrounds
         chkUseRandomPersonalities.setSelected(options.isUseRandomPersonalities());
+        chkUsePersonalityTagsOnly.setSelected(options.isUsePersonalityLabelsOnly());
         chkUseRandomPersonalityReputation.setSelected(options.isUseRandomPersonalityReputation());
         chkUseReasoningXpMultiplier.setSelected(options.isUseReasoningXpMultiplier());
         chkUseSimulatedRelationships.setSelected(options.isUseSimulatedRelationships());
@@ -1609,6 +1671,8 @@ public class BiographyTab {
         chkAssignPortraitOnRoleChange.setSelected(options.isAssignPortraitOnRoleChange());
         chkAllowDuplicatePortraits.setSelected(options.isAllowDuplicatePortraits());
         chkUseGenderedPortraitsOnly.setSelected(options.isUseGenderedPortraitsOnly());
+        chkNoRandomPortraitsForChildren.setSelected(options.isNoRandomPortraitsForChildren());
+        chkChildPortraitsWhenComingOfAge.setSelected(options.isChildPortraitsWhenComingOfAge());
 
         final boolean[] usePortraitForRole = options.isUsePortraitForRoles();
         for (int i = 0; i < chkUsePortrait.length; i++) {
@@ -1648,15 +1712,19 @@ public class BiographyTab {
         options.setAnnounceBirthdays(chkAnnounceBirthdays.isSelected());
         options.setAnnounceChildBirthdays(chkAnnounceChildBirthdays.isSelected());
         options.setAnnounceRecruitmentAnniversaries(chkAnnounceRecruitmentAnniversaries.isSelected());
+        options.setAnnounceRetireeDeath(chkAnnounceRetireeDeath.isSelected());
+        options.setAnnounceRetireeDeathExpanded(chkAnnounceRetireeDeathExpanded.isSelected());
         options.setShowLifeEventDialogBirths(chkShowLifeEventDialogBirths.isSelected());
         options.setShowLifeEventDialogComingOfAge(chkShowLifeEventDialogComingOfAge.isSelected());
         options.setShowLifeEventDialogCelebrations(chkShowLifeEventDialogCelebrations.isSelected());
         options.setAwardVeterancySPAs(chkVeterancySPAs.isSelected());
+        options.setAwardRelevantVeterancySPAs(chkAwardRelevantVeterancySPAs.isSelected());
         options.setRewardComingOfAgeAbilities(chkComingOfAgeSPAs.isSelected());
         options.setRewardComingOfAgeRPSkills(chkRewardComingOfAgeRPSkills.isSelected());
 
         // Backgrounds
         options.setUseRandomPersonalities(chkUseRandomPersonalities.isSelected());
+        options.setUsePersonalityLabelsOnly(chkUsePersonalityTagsOnly.isSelected());
         options.setUseRandomPersonalityReputation(chkUseRandomPersonalityReputation.isSelected());
         options.setUseReasoningXpMultiplier(chkUseReasoningXpMultiplier.isSelected());
         options.setUseSimulatedRelationships(chkUseSimulatedRelationships.isSelected());
@@ -1707,6 +1775,8 @@ public class BiographyTab {
         options.setAssignPortraitOnRoleChange(chkAssignPortraitOnRoleChange.isSelected());
         options.setAllowDuplicatePortraits(chkAllowDuplicatePortraits.isSelected());
         options.setUseGenderedPortraitsOnly(chkUseGenderedPortraitsOnly.isSelected());
+        options.setNoRandomPortraitsForChildren(chkNoRandomPortraitsForChildren.isSelected());
+        options.setChildPortraitsWhenComingOfAge(chkChildPortraitsWhenComingOfAge.isSelected());
         RandomNameGenerator.getInstance().setChosenFaction(comboFactionNames.getSelectedItem());
 
         for (int i = 0; i < chkUsePortrait.length; i++) {

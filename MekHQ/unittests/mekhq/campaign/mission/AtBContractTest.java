@@ -36,7 +36,14 @@ import static mekhq.campaign.universe.Faction.MERCENARY_FACTION_CODE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.anyBoolean;
+import static org.mockito.Mockito.anyInt;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
 import java.util.UUID;
@@ -44,7 +51,6 @@ import java.util.Vector;
 import java.util.stream.Stream;
 
 import megamek.client.generator.RandomCallsignGenerator;
-import megamek.common.enums.SkillLevel;
 import megamek.common.equipment.EquipmentType;
 import megamek.common.units.Entity;
 import megamek.common.units.UnitType;
@@ -53,14 +59,13 @@ import mekhq.campaign.Hangar;
 import mekhq.campaign.campaignOptions.CampaignOptions;
 import mekhq.campaign.force.CombatTeam;
 import mekhq.campaign.force.Formation;
-import mekhq.campaign.force.FormationType;
 import mekhq.campaign.force.FormationLevel;
+import mekhq.campaign.force.FormationType;
 import mekhq.campaign.mission.AtBContract.AtBContractRef;
 import mekhq.campaign.mission.enums.AtBContractType;
 import mekhq.campaign.mission.enums.CombatRole;
 import mekhq.campaign.mission.utilities.ContractUtilities;
 import mekhq.campaign.personnel.backgrounds.RandomCompanyNameGenerator;
-import mekhq.campaign.personnel.ranks.Ranks;
 import mekhq.campaign.unit.Unit;
 import mekhq.campaign.universe.Faction;
 import mekhq.campaign.universe.Factions;
@@ -83,7 +88,6 @@ public class AtBContractTest {
     @BeforeAll
     public static void initSingletons() {
         EquipmentType.initializeTypes();
-        Ranks.initializeRankSystems();
         // TODO: fix this in the production code
         RandomCallsignGenerator.getInstance(true); // Required in this code path to generate a random merc company name
         RandomCompanyNameGenerator.getInstance(); // Required in this code path to generate a random merc company name
@@ -203,45 +207,15 @@ public class AtBContractTest {
     @Test
     public void atbContractSharesPercentMatchesPreviousSetting() {
         AtBContract contract = new AtBContract("Test");
-        contract.setAtBSharesPercent(50);
+        contract.setSharesPercent(50);
         assertEquals(50, contract.getSharesPercent());
-    }
-
-    private static Stream<Arguments> provideContractDifficultyParameters() {
-        return Stream.of(Arguments.of(500.0, 0.0, true, 10),
-              Arguments.of(500.0, 0.0, false, 10),
-              Arguments.of(500.0, 500.0, true, 5),
-              Arguments.of(500.0, 500.0, false, 5),
-              Arguments.of(500.0, 2000.0, true, 1),
-              Arguments.of(500.0, 2000.0, false, 1),
-              Arguments.of(500.0, 525.0, true, 5),
-              Arguments.of(500.0, 525.0, false, 5),
-              Arguments.of(500.0, 350.0, true, 7),
-              Arguments.of(500.0, 350.0, false, 7),
-              Arguments.of(0.0, 0.0, true, -99),
-              Arguments.of(0.0, 0.0, false, -99));
-    }
-
-    @ParameterizedTest
-    @MethodSource("provideContractDifficultyParameters")
-    public void calculateContractDifficultySameSkillMatchesExpectedRating(double enemyBV, double playerBV,
-          boolean useGenericBattleValue, int expectedResult) {
-        contract = spy(contract);
-        doReturn(SkillLevel.REGULAR).when(contract).modifySkillLevelBasedOnFaction(anyString(), any(SkillLevel.class));
-        doReturn(enemyBV).when(contract).estimateMekStrength(anyInt(), anyBoolean(), anyString(), anyInt());
-        doReturn(playerBV).when(contract).estimatePlayerPower(anyList(), anyBoolean());
-        when(campaign.getGameYear()).thenReturn(3025);
-        when(options.isUseGenericBattleValue()).thenReturn(useGenericBattleValue);
-
-        int difficulty = contract.calculateContractDifficulty(3025, true, new ArrayList<>());
-        assertEquals(expectedResult, difficulty);
     }
 
     @Test
     public void setContractTypeUpdatesParentMissionType() {
-        contract.setContractType(AtBContractType.CADRE_DUTY);
+        contract.setContractTypeAndName(AtBContractType.CADRE_DUTY);
         assertEquals(AtBContractType.CADRE_DUTY, contract.getContractType());
-        assertEquals("Cadre Duty", contract.getType());
+        assertEquals("Cadre Duty", contract.getContractTypeName());
     }
 
     private static Stream<Arguments> provideEnemyFactionAndYear() {
@@ -253,23 +227,23 @@ public class AtBContractTest {
 
     @ParameterizedTest
     @MethodSource("provideEnemyFactionAndYear")
-    public void getEnemyNameReturnsCorrectValueInYear(int year, String enemyCode, String fullName) {
+    public void generateEnemyNameReturnsCorrectValueInYear(int year, String enemyCode, String fullName) {
         contract.setEnemyCode(enemyCode);
-        assertEquals(fullName, contract.getEnemyName(year));
+        assertEquals(fullName, contract.generateEnemyName(year));
     }
 
     @Test
-    public void getEnemyNameReturnsCorrectValueWhenMerc() {
+    public void generateEnemyNameReturnsCorrectValueWhenMerc() {
         String name = "Testing Merc";
         contract.setEnemyCode(MERCENARY_FACTION_CODE);
         contract.setEnemyBotName(name);
-        assertEquals(name, contract.getEnemyName(3025));
+        assertEquals(name, contract.generateEnemyName(3025));
     }
 
     @Test
-    public void getEnemyNameReturnsNonNullWhenMercAndBotNameNotSet() {
+    public void generateEnemyNameReturnsNonNullWhenMercAndBotNameNotSet() {
         contract.setEnemyCode("MERC");
-        assertNotEquals("", contract.getEnemyName(3025));
+        assertNotEquals("", contract.generateEnemyName(3025));
     }
 
     private static Stream<Arguments> provideEmployerNamesAndMercStatus() {
@@ -285,7 +259,7 @@ public class AtBContractTest {
     @MethodSource("provideEmployerNamesAndMercStatus")
     public void getEmployerNameReturnsCorrectName(int year, boolean isMercSubcontract, String employerCode,
           String fullName) {
-        contract.setEmployerCode(employerCode, year);
+        contract.updateEmployer(employerCode, year);
         contract.setMercSubcontract(isMercSubcontract);
         assertEquals(fullName, contract.getEmployerName(year));
     }

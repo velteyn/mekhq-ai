@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022-2025 The MegaMek Team. All Rights Reserved.
+ * Copyright (C) 2022-2026 The MegaMek Team. All Rights Reserved.
  *
  * This file is part of MekHQ.
  *
@@ -83,12 +83,23 @@ public class PersonnelTabViewTest {
     }
 
     @Test
-    public void testIsPilotGunnerySkills() {
+    public void testIsGunneryPilotSkills() {
         for (final PersonnelTabView personnelTabView : views) {
-            if (personnelTabView == PersonnelTabView.PILOT_GUNNERY_SKILLS) {
-                assertTrue(personnelTabView.isPilotGunnerySkills());
+            if (personnelTabView == PersonnelTabView.GUNNERY_PILOT_SKILLS) {
+                assertTrue(personnelTabView.isGunneryPilotSkills());
             } else {
-                assertFalse(personnelTabView.isPilotGunnerySkills());
+                assertFalse(personnelTabView.isGunneryPilotSkills());
+            }
+        }
+    }
+
+    @Test
+    public void testIsGunneryPilotSkillsII() {
+        for (final PersonnelTabView personnelTabView : views) {
+            if (personnelTabView == PersonnelTabView.GUNNERY_PILOT_SKILLS_II) {
+                assertTrue(personnelTabView.isGunneryPilotSkillsII());
+            } else {
+                assertFalse(personnelTabView.isGunneryPilotSkillsII());
             }
         }
     }
@@ -166,17 +177,6 @@ public class PersonnelTabViewTest {
                 assertTrue(personnelTabView.isDates());
             } else {
                 assertFalse(personnelTabView.isDates());
-            }
-        }
-    }
-
-    @Test
-    public void testIsFlags() {
-        for (final PersonnelTabView personnelTabView : views) {
-            if (personnelTabView == PersonnelTabView.FLAGS) {
-                assertTrue(personnelTabView.isFlags());
-            } else {
-                assertFalse(personnelTabView.isFlags());
             }
         }
     }

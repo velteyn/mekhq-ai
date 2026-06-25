@@ -55,6 +55,7 @@ import org.w3c.dom.NodeList;
 public class MissingFireControlSystem extends MissingPart {
     private Money cost;
 
+    @Deprecated(since = "0.51.0", forRemoval = true)
     public MissingFireControlSystem() {
         this(0, Money.zero(), null);
     }
@@ -70,7 +71,7 @@ public class MissingFireControlSystem extends MissingPart {
         int time = 0;
         if (campaign.getCampaignOptions().isUseAeroSystemHits()) {
             // Test of proposed errata for repair times
-            if (unit.getEntity() instanceof Dropship || unit.getEntity() instanceof Jumpship) {
+            if (unit != null && (unit.getEntity() instanceof Dropship || unit.getEntity() instanceof Jumpship)) {
                 time = 1200;
                 if (unit.getEntity().hasNavalC3()) {
                     time *= 2;

@@ -217,7 +217,7 @@ public class RetirementTableModel extends AbstractTableModel {
                 // check for tech
                 if (!person.getTechUnits().isEmpty()) {
                     if (person.getTechUnits().size() == 1) {
-                        u = person.getTechUnits().get(0);
+                        u = person.getTechUnits().getFirst();
                         if (null != u) {
                             return u.getName() + " (" + person.getMaintenanceTimeUsing() + "m)";
                         }
@@ -410,11 +410,11 @@ public class RetirementTableModel extends AbstractTableModel {
             setText(getValueAt(actualRow, actualCol).toString());
             if (actualCol == COL_PERSON) {
                 setText(p.getFullDesc(campaign));
-                setImage(p.getPortrait().getImage(40));
+                setImage(p.getPortraitImageIconWithFallback(true, 40).getImage());
             } else if (actualCol == COL_ASSIGN) {
                 Unit u = p.getUnit();
                 if (!p.getTechUnits().isEmpty()) {
-                    u = p.getTechUnits().get(0);
+                    u = p.getTechUnits().getFirst();
                 }
 
                 if (null != u) {

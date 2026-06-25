@@ -54,6 +54,7 @@ import megamek.common.annotations.Nullable;
 import mekhq.campaign.Campaign;
 import mekhq.campaign.campaignOptions.CampaignOptions;
 import mekhq.campaign.personnel.enums.AwardBonus;
+import mekhq.campaign.personnel.enums.EdgeRefreshPeriod;
 import mekhq.campaign.personnel.enums.TimeInDisplayFormat;
 import mekhq.campaign.randomEvents.prisoners.enums.PrisonerCaptureStyle;
 import mekhq.gui.campaignOptions.CampaignOptionFlag;
@@ -103,6 +104,7 @@ public class PersonnelTab {
     private JPanel pnlPersonnelGeneralOptions;
     private JCheckBox chkUseTactics;
     private JCheckBox chkUseInitiativeBonus;
+    private JCheckBox chkUseSensibleTactics;
     private JCheckBox chkUseToughness;
     private JCheckBox chkUseRandomToughness;
     private JCheckBox chkUseArtillery;
@@ -111,7 +113,10 @@ public class PersonnelTab {
     private JCheckBox chkOnlyCommandersMatterInfantry;
     private JCheckBox chkOnlyCommandersMatterBattleArmor;
     private JCheckBox chkUseEdge;
-    private JCheckBox chkUseSupportEdge;
+    private JLabel lblEdgeRefreshPeriod;
+    private MMComboBox<EdgeRefreshPeriod> comboEdgeRefreshPeriod;
+    private JLabel lblEdgeRefreshCost;
+    private JSpinner spnEdgeRefreshCost;
     private JCheckBox chkUseImplants;
     private JCheckBox chkUseAlternativeQualityAveraging;
 
@@ -385,6 +390,7 @@ public class PersonnelTab {
         pnlPersonnelGeneralOptions = new JPanel();
         chkUseTactics = new JCheckBox();
         chkUseInitiativeBonus = new JCheckBox();
+        chkUseSensibleTactics = new JCheckBox();
         chkUseToughness = new JCheckBox();
         chkUseRandomToughness = new JCheckBox();
         chkUseArtillery = new JCheckBox();
@@ -393,7 +399,10 @@ public class PersonnelTab {
         chkOnlyCommandersMatterInfantry = new JCheckBox();
         chkOnlyCommandersMatterBattleArmor = new JCheckBox();
         chkUseEdge = new JCheckBox();
-        chkUseSupportEdge = new JCheckBox();
+        lblEdgeRefreshPeriod = new JLabel();
+        comboEdgeRefreshPeriod = new MMComboBox<>("comboEdgeRefreshPeriod", EdgeRefreshPeriod.values());
+        lblEdgeRefreshCost = new JLabel();
+        spnEdgeRefreshCost = new JSpinner();
         chkUseImplants = new JCheckBox();
         chkUseAlternativeQualityAveraging = new JCheckBox();
 
@@ -427,7 +436,7 @@ public class PersonnelTab {
         // Header
         generalHeader = new CampaignOptionsHeaderPanel("PersonnelGeneralTab",
               getImageDirectory() + "logo_clan_wolverine.png",
-              5);
+              6);
 
         // Contents
         pnlPersonnelGeneralOptions = createGeneralOptionsPanel();
@@ -482,6 +491,9 @@ public class PersonnelTab {
         chkUseInitiativeBonus = new CampaignOptionsCheckBox("UseInitiativeBonus",
               getMetadata(LEGACY_RULE_BEFORE_METADATA, CampaignOptionFlag.IMPORTANT));
         chkUseInitiativeBonus.addMouseListener(createTipPanelUpdater(generalHeader, "UseInitiativeBonus"));
+        chkUseSensibleTactics = new CampaignOptionsCheckBox("UseSensibleTactics",
+              getMetadata(new Version(0, 51, 1), CampaignOptionFlag.IMPORTANT, CampaignOptionFlag.CUSTOM_SYSTEM));
+        chkUseSensibleTactics.addMouseListener(createTipPanelUpdater(generalHeader, "UseSensibleTactics"));
         chkUseToughness = new CampaignOptionsCheckBox("UseToughness",
               getMetadata(LEGACY_RULE_BEFORE_METADATA, CampaignOptionFlag.CUSTOM_SYSTEM));
         chkUseToughness.addMouseListener(createTipPanelUpdater(generalHeader, "UseToughness"));
@@ -506,8 +518,26 @@ public class PersonnelTab {
               "OnlyCommandersMatterBattleArmor"));
         chkUseEdge = new CampaignOptionsCheckBox("UseEdge");
         chkUseEdge.addMouseListener(createTipPanelUpdater(generalHeader, "UseEdge"));
-        chkUseSupportEdge = new CampaignOptionsCheckBox("UseSupportEdge");
-        chkUseSupportEdge.addMouseListener(createTipPanelUpdater(generalHeader, "UseSupportEdge"));
+
+        lblEdgeRefreshPeriod = new CampaignOptionsLabel("EdgeRefreshPeriod", getMetadata(new Version(0, 51, 0)));
+        lblEdgeRefreshPeriod.addMouseListener(createTipPanelUpdater(generalHeader, "EdgeRefreshPeriod"));
+        comboEdgeRefreshPeriod.setRenderer(new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(final JList<?> list, final Object value, final int index,
+                  final boolean isSelected, final boolean cellHasFocus) {
+                super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                if (value instanceof EdgeRefreshPeriod) {
+                    list.setToolTipText(wordWrap(((EdgeRefreshPeriod) value).getTooltip()));
+                }
+                return this;
+            }
+        });
+        comboEdgeRefreshPeriod.addMouseListener(createTipPanelUpdater(generalHeader, "EdgeRefreshPeriod"));
+
+        lblEdgeRefreshCost = new CampaignOptionsLabel("EdgeRefreshCost", getMetadata(new Version(0, 51, 0)));
+        lblEdgeRefreshCost.addMouseListener(createTipPanelUpdater(generalHeader, "EdgeRefreshCost"));
+        spnEdgeRefreshCost = new CampaignOptionsSpinner("EdgeRefreshCost", 20, 0, 100, 1);
+        spnEdgeRefreshCost.addMouseListener(createTipPanelUpdater(generalHeader, "EdgeRefreshCost"));
         chkUseImplants = new CampaignOptionsCheckBox("UseImplants");
         chkUseImplants.addMouseListener(createTipPanelUpdater(generalHeader, "UseImplants"));
         chkUseAlternativeQualityAveraging = new CampaignOptionsCheckBox("UseAlternativeQualityAveraging",
@@ -525,6 +555,9 @@ public class PersonnelTab {
 
         layout.gridy++;
         panel.add(chkUseInitiativeBonus, layout);
+
+        layout.gridy++;
+        panel.add(chkUseSensibleTactics, layout);
 
         layout.gridy++;
         panel.add(chkUseToughness, layout);
@@ -550,13 +583,19 @@ public class PersonnelTab {
         layout.gridy++;
         panel.add(chkUseEdge, layout);
 
+        layout.gridx = 0;
         layout.gridy++;
-        panel.add(chkUseSupportEdge, layout);
+        panel.add(lblEdgeRefreshCost, layout);
+        layout.gridx++;
+        panel.add(spnEdgeRefreshCost, layout);
 
         layout.gridx = 0;
         layout.gridy++;
-        panel.add(chkUseImplants, layout);
+        panel.add(lblEdgeRefreshPeriod, layout);
+        layout.gridx++;
+        panel.add(comboEdgeRefreshPeriod, layout);
 
+        layout.gridx = 0;
         layout.gridy++;
         panel.add(chkUseImplants, layout);
 
@@ -646,15 +685,19 @@ public class PersonnelTab {
         chkUseBlobInfantry.addMouseListener(createTipPanelUpdater(generalHeader, "UseBlobInfantry"));
         chkUseBlobBattleArmor = new CampaignOptionsCheckBox("UseBlobBattleArmor", getMetadata(new Version(0, 50, 12)));
         chkUseBlobBattleArmor.addMouseListener(createTipPanelUpdater(generalHeader, "UseBlobBattleArmor"));
-        chkUseBlobVehicleCrewGround = new CampaignOptionsCheckBox("UseBlobVehicleCrewGround", getMetadata(new Version(0, 50, 12)));
+        chkUseBlobVehicleCrewGround = new CampaignOptionsCheckBox("UseBlobVehicleCrewGround",
+              getMetadata(new Version(0, 50, 12)));
         chkUseBlobVehicleCrewGround.addMouseListener(createTipPanelUpdater(generalHeader, "UseBlobVehicleCrewGround"));
-        chkUseBlobVehicleCrewVTOL = new CampaignOptionsCheckBox("UseBlobVehicleCrewVTOL", getMetadata(new Version(0, 50, 12)));
+        chkUseBlobVehicleCrewVTOL = new CampaignOptionsCheckBox("UseBlobVehicleCrewVTOL",
+              getMetadata(new Version(0, 50, 12)));
         chkUseBlobVehicleCrewVTOL.addMouseListener(createTipPanelUpdater(generalHeader, "UseBlobVehicleCrewVTOL"));
-        chkUseBlobVehicleCrewNaval = new CampaignOptionsCheckBox("UseBlobVehicleCrewNaval", getMetadata(new Version(0, 50, 12)));
+        chkUseBlobVehicleCrewNaval = new CampaignOptionsCheckBox("UseBlobVehicleCrewNaval",
+              getMetadata(new Version(0, 50, 12)));
         chkUseBlobVehicleCrewNaval.addMouseListener(createTipPanelUpdater(generalHeader, "UseBlobVehicleCrewNaval"));
         chkUseBlobVesselPilot = new CampaignOptionsCheckBox("UseBlobVesselPilot", getMetadata(new Version(0, 50, 12)));
         chkUseBlobVesselPilot.addMouseListener(createTipPanelUpdater(generalHeader, "UseBlobVesselPilot"));
-        chkUseBlobVesselGunner = new CampaignOptionsCheckBox("UseBlobVesselGunner", getMetadata(new Version(0, 50, 12)));
+        chkUseBlobVesselGunner = new CampaignOptionsCheckBox("UseBlobVesselGunner",
+              getMetadata(new Version(0, 50, 12)));
         chkUseBlobVesselGunner.addMouseListener(createTipPanelUpdater(generalHeader, "UseBlobVesselGunner"));
         chkUseBlobVesselCrew = new CampaignOptionsCheckBox("UseBlobVesselCrew", getMetadata(new Version(0, 50, 12)));
         chkUseBlobVesselCrew.addMouseListener(createTipPanelUpdater(generalHeader, "UseBlobVesselCrew"));
@@ -925,7 +968,9 @@ public class PersonnelTab {
 
         // Contents
         chkUseAdvancedMedical = new CampaignOptionsCheckBox("UseAdvancedMedical",
-              getMetadata(LEGACY_RULE_BEFORE_METADATA, CampaignOptionFlag.CUSTOM_SYSTEM, CampaignOptionFlag.DOCUMENTED));
+              getMetadata(LEGACY_RULE_BEFORE_METADATA,
+                    CampaignOptionFlag.CUSTOM_SYSTEM,
+                    CampaignOptionFlag.DOCUMENTED));
         chkUseAdvancedMedical.addMouseListener(createTipPanelUpdater(medicalHeader, "UseAdvancedMedical"));
 
         lblHealWaitingPeriod = new CampaignOptionsLabel("HealWaitingPeriod");
@@ -1269,7 +1314,9 @@ public class PersonnelTab {
         dependentsPanel = createDependentsPanel();
 
         // Layout the Panel
-        final JPanel panel = new CampaignOptionsStandardPanel("PrisonersAndDependentsTab", true, "PrisonersAndDependentsTab",
+        final JPanel panel = new CampaignOptionsStandardPanel("PrisonersAndDependentsTab",
+              true,
+              "PrisonersAndDependentsTab",
               getMetadata(null, CampaignOptionFlag.CUSTOM_SYSTEM, CampaignOptionFlag.DOCUMENTED));
         final GridBagConstraints layoutParent = new CampaignOptionsGridBagConstraints(panel);
 
@@ -1459,6 +1506,7 @@ public class PersonnelTab {
         // General
         chkUseTactics.setSelected(options.isUseTactics());
         chkUseInitiativeBonus.setSelected(options.isUseInitiativeBonus());
+        chkUseSensibleTactics.setSelected(options.isUseSensibleTactics());
         chkUseToughness.setSelected(options.isUseToughness());
         chkUseRandomToughness.setSelected(options.isUseRandomToughness());
         chkUseArtillery.setSelected(options.isUseArtillery());
@@ -1467,7 +1515,8 @@ public class PersonnelTab {
         chkOnlyCommandersMatterInfantry.setSelected(options.isOnlyCommandersMatterInfantry());
         chkOnlyCommandersMatterBattleArmor.setSelected(options.isOnlyCommandersMatterBattleArmor());
         chkUseEdge.setSelected(options.isUseEdge());
-        chkUseSupportEdge.setSelected(options.isUseSupportEdge());
+        comboEdgeRefreshPeriod.setSelectedItem(options.getEdgeRefreshPeriod());
+        spnEdgeRefreshCost.setValue(options.getEdgeRefreshCost());
         chkUseImplants.setSelected(options.isUseImplants());
         chkUseAlternativeQualityAveraging.setSelected(options.isAlternativeQualityAveraging());
         chkUsePersonnelRemoval.setSelected(options.isUsePersonnelRemoval());
@@ -1569,6 +1618,7 @@ public class PersonnelTab {
         // General
         options.setUseTactics(chkUseTactics.isSelected());
         options.setUseInitiativeBonus(chkUseInitiativeBonus.isSelected());
+        options.setUseSensibleTactics(chkUseSensibleTactics.isSelected());
         options.setUseToughness(chkUseToughness.isSelected());
         options.setUseRandomToughness(chkUseRandomToughness.isSelected());
         options.setUseArtillery(chkUseArtillery.isSelected());
@@ -1577,7 +1627,8 @@ public class PersonnelTab {
         options.setOnlyCommandersMatterInfantry(chkOnlyCommandersMatterInfantry.isSelected());
         options.setOnlyCommandersMatterBattleArmor(chkOnlyCommandersMatterBattleArmor.isSelected());
         options.setUseEdge(chkUseEdge.isSelected());
-        options.setUseSupportEdge(chkUseSupportEdge.isSelected());
+        options.setEdgeRefreshPeriod(comboEdgeRefreshPeriod.getSelectedItem());
+        options.setEdgeRefreshCost((int) spnEdgeRefreshCost.getValue());
         options.setUseImplants(chkUseImplants.isSelected());
         options.setAlternativeQualityAveraging(chkUseAlternativeQualityAveraging.isSelected());
         options.setUsePersonnelRemoval(chkUsePersonnelRemoval.isSelected());

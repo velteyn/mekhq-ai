@@ -53,6 +53,7 @@ import mekhq.campaign.force.CombatTeam;
 import mekhq.campaign.force.Formation;
 import mekhq.campaign.mission.AtBContract;
 import mekhq.campaign.personnel.Person;
+import mekhq.campaign.personnel.enums.PersonnelRole;
 import mekhq.campaign.personnel.enums.PersonnelStatus;
 import mekhq.campaign.stratCon.StratConRulesManager;
 import mekhq.campaign.stratCon.StratConTrackState;
@@ -118,8 +119,15 @@ public class Fatigue {
      * @return the total number of personnel requiring field kitchen support.
      */
     public static int checkFieldKitchenUsage(List<Person> activePersonnel,
-          boolean isUseFieldKitchenIgnoreNonCombatants) {
+          boolean isUseFieldKitchenIgnoreNonCombatants, Campaign campaign) {
         int fieldKitchenUsage = 0;
+
+        for (PersonnelRole personnelRole : campaign.getTempCrewRoleKeys()) {
+            if (!personnelRole.isCombat() && isUseFieldKitchenIgnoreNonCombatants) {
+                continue;
+            }
+            fieldKitchenUsage += campaign.getTempCrewPool(personnelRole);
+        }
 
         for (Person person : activePersonnel) {
             if (!person.isCombat() && isUseFieldKitchenIgnoreNonCombatants) {
@@ -179,7 +187,8 @@ public class Fatigue {
         int effectiveFatigue = getEffectiveFatigue(person.getAdjustedFatigue(), person.getPermanentFatigue(),
               person.isClanPersonnel(), person.getSkillLevel(campaign, false, true));
 
-        if (!campaign.getCampaignOptions().isUseFatigue()) {
+        CampaignOptions campaignOptions = campaign.getCampaignOptions();
+        if (!campaignOptions.isUseFatigue()) {
             return;
         }
 
@@ -213,8 +222,22 @@ public class Fatigue {
             person.setIsRecoveringFromFatigue(true);
         }
 
-        if ((campaign.getCampaignOptions().getFatigueLeaveThreshold() != 0)
-                  && (effectiveFatigue >= campaign.getCampaignOptions().getFatigueLeaveThreshold())) {
+        int fatigueThreshold = campaignOptions.getFatigueLeaveThreshold();
+        boolean hasThreshold = fatigueThreshold != 0;
+
+        boolean isFatigued = effectiveFatigue >= fatigueThreshold;
+        boolean isCampFollower = person.getStatus().isCampFollower();
+        boolean isFree = !person.isBusy();
+
+        int nonPermanentInjuryCount = person.getNonPermanentInjuries().size();
+        int hits = person.getHits();
+        boolean isInjured = nonPermanentInjuryCount > 0 || hits > 0;
+
+        if (hasThreshold &&
+                  isFatigued &&
+                  isFree &&
+                  !isInjured &&
+                  !isCampFollower) {
             person.changeStatus(campaign, campaign.getLocalDate(), PersonnelStatus.ON_LEAVE);
         }
     }
@@ -280,8 +303,8 @@ public class Fatigue {
 
             if (fatiguedUnits >= (unitsInForce.size() + 1) / 2) {
                 for (AtBContract contract : campaign.getActiveAtBContracts()) {
-                    if (contract.getStratconCampaignState() != null) {
-                        for (StratConTrackState track : contract.getStratconCampaignState().getTracks()) {
+                    if (contract.getStratConCampaignState() != null) {
+                        for (StratConTrackState track : contract.getStratConCampaignState().getTracks()) {
                             track.unassignFormation(formation.getId());
                         }
                     }
@@ -360,10 +383,6 @@ public class Fatigue {
             }
 
             person.changeFatigue(-fatigueAdjustment);
-
-            if (person.getFatigueDirect() < 0) {
-                person.setFatigue(0);
-            }
         }
 
         if (campaign.getCampaignOptions().isUseFatigue()) {

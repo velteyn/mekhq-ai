@@ -45,6 +45,7 @@ import static mekhq.campaign.personnel.skills.enums.SkillSubType.*;
 import static mekhq.gui.campaignOptions.CampaignOptionsUtilities.createParentPanel;
 import static mekhq.gui.campaignOptions.CampaignOptionsUtilities.getCampaignOptionsResourceBundle;
 import static mekhq.gui.campaignOptions.CampaignOptionsUtilities.getImageDirectory;
+import static mekhq.gui.campaignOptions.CampaignOptionsUtilities.getMetadata;
 import static mekhq.utilities.MHQInternationalization.getTextAt;
 
 import java.awt.GridBagConstraints;
@@ -58,6 +59,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JSpinner;
 
+import megamek.Version;
 import megamek.common.annotations.Nullable;
 import megamek.common.enums.SkillLevel;
 import megamek.logging.MMLogger;
@@ -215,7 +217,7 @@ public class SkillsTab {
                                                subType == ROLEPLAY_SECURITY;
                 // These next few cases shouldn't get hit, but we include them just in case
                 case SUPPORT_TECHNICIAN -> subType == SUPPORT_TECHNICIAN;
-                case UTILITY_COMMAND, SUPPORT_COMMAND -> subType == UTILITY_COMMAND;
+                case UTILITY_COMMAND -> subType == UTILITY_COMMAND;
                 case ROLEPLAY_ART -> subType == ROLEPLAY_ART;
                 case ROLEPLAY_INTEREST -> subType == ROLEPLAY_INTEREST;
                 case ROLEPLAY_SCIENCE -> subType == ROLEPLAY_SCIENCE;
@@ -310,7 +312,7 @@ public class SkillsTab {
         lblEdgeCost = new CampaignOptionsLabel("EdgeCost");
         spnEdgeCost = new CampaignOptionsSpinner("EdgeCost", 100, 0, 500, 1);
 
-        lblAttributeCost = new CampaignOptionsLabel("AttributeCost");
+        lblAttributeCost = new CampaignOptionsLabel("AttributeCost", getMetadata(new Version(0, 51, 0)));
         spnAttributeCost = new CampaignOptionsSpinner("AttributeCost", 100, 0, 500, 1);
 
         // Layout the Panel
@@ -326,9 +328,9 @@ public class SkillsTab {
 
         layout.gridy++;
         layout.gridx = 0;
-        panel.add(lblEdgeCost, layout);
+        panel.add(lblAttributeCost, layout);
         layout.gridx++;
-        panel.add(spnEdgeCost, layout);
+        panel.add(spnAttributeCost, layout);
 
         return panel;
     }
@@ -628,8 +630,8 @@ public class SkillsTab {
             }
         }
 
-        // Edge Costs
         spnEdgeCost.setValue(options.getEdgeCost());
+        spnAttributeCost.setValue(options.getAttributeCost());
     }
 
     /**
@@ -712,8 +714,8 @@ public class SkillsTab {
             updateSkillMilestones(type);
         }
 
-        // Edge Costs
         options.setEdgeCost((int) spnEdgeCost.getValue());
+        options.setAttributeCost((int) spnAttributeCost.getValue());
     }
 
     /**

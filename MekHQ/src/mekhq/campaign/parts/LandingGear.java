@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2009 Jay Lawson (jaylawson39 at yahoo.com). All rights reserved.
- * Copyright (C) 2013-2025 The MegaMek Team. All Rights Reserved.
+ * Copyright (C) 2013-2026 The MegaMek Team. All Rights Reserved.
  *
  * This file is part of MekHQ.
  *
@@ -55,6 +55,7 @@ import org.w3c.dom.Node;
  * @author Jay Lawson (jaylawson39 at yahoo.com)
  */
 public class LandingGear extends Part {
+    @Deprecated(since = "0.51.0", forRemoval = true)
     public LandingGear() {
         this(0, null);
     }
@@ -154,12 +155,12 @@ public class LandingGear extends Part {
             } else if (unit.getEntity() instanceof LandAirMek) {
                 unit.damageSystem(CriticalSlot.TYPE_SYSTEM, LandAirMek.LAM_LANDING_GEAR, 3);
             }
-            Part spare = campaign.getWarehouse().checkForExistingSparePart(this);
+            Part spare = getWarehouse().checkForExistingSparePart(this);
             if (!salvage) {
-                campaign.getWarehouse().removePart(this);
+                getWarehouse().removePart(this);
             } else if (null != spare) {
                 spare.changeQuantity(1);
-                campaign.getWarehouse().removePart(this);
+                getWarehouse().removePart(this);
             }
             unit.removePart(this);
             Part missing = getMissingPart();

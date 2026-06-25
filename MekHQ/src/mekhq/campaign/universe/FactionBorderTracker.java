@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018-2025 The MegaMek Team. All Rights Reserved.
+ * Copyright (C) 2018-2026 The MegaMek Team. All Rights Reserved.
  *
  * This file is part of MekHQ.
  *
@@ -115,6 +115,7 @@ public class FactionBorderTracker {
     /**
      * @return The X coordinate of the bounding hex
      */
+    @Deprecated(since = "0.51.0", forRemoval = true)
     public double getCenterX() {
         return regionHex.center[0];
     }
@@ -254,6 +255,7 @@ public class FactionBorderTracker {
      * @see #setDayThreshold(int)
      * @see #setDistanceThreshold(double)
      */
+    @Deprecated(since = "0.51.0", forRemoval = true)
     public synchronized @Nullable FactionBorders getBorders(String fKey) {
         while (invalid) {
             try {
@@ -318,6 +320,7 @@ public class FactionBorderTracker {
      *
      * @return The distance in light years
      */
+    @Deprecated(since = "0.51.0", forRemoval = true)
     public double getDistanceThreshold() {
         return distanceThreshold;
     }
@@ -338,6 +341,7 @@ public class FactionBorderTracker {
      * either direction, methods that access calculated border data will block until the calculation is complete. Any
      * distance less than this is considered close enough that the previous data is accurate enough.
      */
+    @Deprecated(since = "0.51.0", forRemoval = true)
     public int getDayThreshold() {
         return dayThreshold;
     }
@@ -491,7 +495,7 @@ public class FactionBorderTracker {
         invalid |= now.minusDays(dayThreshold).isAfter(lastUpdate)
                          || now.plusDays(dayThreshold).isBefore(lastUpdate);
 
-        PlanetarySystem loc = event.getCampaign().getLocation().getCurrentSystem();
+        PlanetarySystem loc = event.getCampaign().getCurrentLocation().getCurrentSystem();
         if (!regionHex.isCenter(loc.getX(), loc.getY())) {
             invalid |= (distanceThreshold > 0)
                              && (regionHex.distanceTo(loc.getX(), loc.getY()) > distanceThreshold);

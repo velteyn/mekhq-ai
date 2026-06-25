@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2025 The MegaMek Team. All Rights Reserved.
+ * Copyright (C) 2011-2026 The MegaMek Team. All Rights Reserved.
  *
  * This file is part of MekHQ.
  *
@@ -67,7 +67,6 @@ import javax.imageio.ImageIO;
 import javax.swing.*;
 import javax.vecmath.Vector2d;
 
-import megamek.codeUtilities.MathUtility;
 import megamek.codeUtilities.ObjectUtility;
 import megamek.common.annotations.Nullable;
 import megamek.common.universe.FactionTag;
@@ -89,6 +88,7 @@ import mekhq.campaign.universe.enums.HiringHallLevel;
 import mekhq.campaign.universe.factionHints.FactionHints;
 import mekhq.campaign.universe.factionStanding.FactionStandingUtilities;
 import mekhq.campaign.universe.factionStanding.FactionStandings;
+import mekhq.gui.dialog.PlanetarySystemEditorDialog;
 
 /**
  * This is not functional yet. Just testing things out. A lot of this code is borrowed from InterstellarMap.java in
@@ -275,9 +275,9 @@ public class InterstellarMapPanel extends JPanel {
                     centerM.add(item);
                     popup.add(centerM);
                     item = new JMenuItem("Cancel Current Trip");
-                    item.setEnabled(null != InterstellarMapPanel.this.campaign.getLocation().getJumpPath());
+                    item.setEnabled(null != InterstellarMapPanel.this.campaign.getCurrentLocation().getJumpPath());
                     item.addActionListener(evt -> {
-                        InterstellarMapPanel.this.campaign.getLocation().setJumpPath(null);
+                        InterstellarMapPanel.this.campaign.getCurrentLocation().setJumpPath(null);
                         repaint();
                     });
                     popup.add(item);
@@ -340,15 +340,22 @@ public class InterstellarMapPanel extends JPanel {
                      * menuGM.add(item);
                      */
 
+                    item = new JMenuItem("Edit System (GM)...");
+                    item.setEnabled((selectedSystem != null) && InterstellarMapPanel.this.campaign.isGM());
+                    if (selectedSystem != null) {
+                        final PlanetarySystem editTarget = selectedSystem;
+                        item.addActionListener(evt -> openPlanetarySystemEditor(editTarget));
+                    }
+                    menuGM.add(item);
+
                     item = new JMenuItem("Recharge Jumpdrive");
-                    item.setEnabled(InterstellarMapPanel.this.campaign.getLocation()
+                    item.setEnabled(InterstellarMapPanel.this.campaign.getCurrentLocation()
                                           .isRecharging(InterstellarMapPanel.this.campaign) &&
                                           InterstellarMapPanel.this.campaign.isGM());
                     item.addActionListener(evt -> {
-                        InterstellarMapPanel.this.campaign.getLocation()
-                              .setRecharged(InterstellarMapPanel.this.campaign);
+                        InterstellarMapPanel.this.campaign.getCurrentLocation()
+                              .chargeFully(InterstellarMapPanel.this.campaign);
                         InterstellarMapPanel.this.campaign.addReport(GENERAL, "GM: Jumpship drives fully charged");
-                        hqView.refreshLocation();
                     });
                     menuGM.add(item);
 
@@ -368,7 +375,7 @@ public class InterstellarMapPanel extends JPanel {
                         }
                         center(selectedSystem);
                         // bring up a planetary system map
-                        hqView.getMapTab().switchPlanetaryMap(selectedSystem);
+                        hqView.getNavigationTab().getMapTab().switchPlanetaryMap(selectedSystem);
                     } else {
                         PlanetarySystem target = nearestNeighbour(scr2mapX(e.getX()), scr2mapY(e.getY()));
                         if (null == target) {
@@ -448,7 +455,7 @@ public class InterstellarMapPanel extends JPanel {
                 g2.setColor(Color.BLACK);
                 g2.fillRect(0, 0, getWidth(), getHeight());
                 double size = 1 + 5 * Math.log(conf.scale);
-                size = Math.max(min(size, conf.maxDotSize), conf.minDotSize);
+                size = Math.clamp(size, conf.minDotSize, conf.maxDotSize);
 
                 final Stroke thick = new BasicStroke(2.0f);
                 final Stroke thin = new BasicStroke(1.2f);
@@ -705,9 +712,13 @@ public class InterstellarMapPanel extends JPanel {
 
                 // check to see if the unit is traveling on a jump path currently and if so
                 // draw this one too, in a different color
-                if (null != InterstellarMapPanel.this.campaign.getLocation().getJumpPath()) {
-                    for (int i = 0; i < InterstellarMapPanel.this.campaign.getLocation().getJumpPath().size(); i++) {
-                        PlanetarySystem systemB = InterstellarMapPanel.this.campaign.getLocation().getJumpPath().get(i);
+                if (null != InterstellarMapPanel.this.campaign.getCurrentLocation().getJumpPath()) {
+                    for (int i = 0;
+                          i < InterstellarMapPanel.this.campaign.getCurrentLocation().getJumpPath().size();
+                          i++) {
+                        PlanetarySystem systemB = InterstellarMapPanel.this.campaign.getCurrentLocation()
+                                                        .getJumpPath()
+                                                        .get(i);
                         double x = map2scrX(systemB.getX());
                         double y = map2scrY(systemB.getY());
                         // lest try rings
@@ -724,7 +735,7 @@ public class InterstellarMapPanel extends JPanel {
                         arc.setArcByCenter(x, y, size * 1.2, 0, 360, Arc2D.OPEN);
                         g2.fill(arc);
                         if (i > 0) {
-                            PlanetarySystem systemA = InterstellarMapPanel.this.campaign.getLocation()
+                            PlanetarySystem systemA = InterstellarMapPanel.this.campaign.getCurrentLocation()
                                                             .getJumpPath()
                                                             .get(i - 1);
                             g2.setPaint(Color.YELLOW);
@@ -755,32 +766,34 @@ public class InterstellarMapPanel extends JPanel {
                         if (system.equals(InterstellarMapPanel.this.campaign.getCurrentSystem())) {
                             // let's try rings
                             g2.setPaint(Color.ORANGE);
-                            arc.setArcByCenter(x, y, size * 1.8, 0, 360, Arc2D.OPEN);
+                            arc.setArcByCenter(x, y, size * 3.4, 0, 360, Arc2D.OPEN);
                             g2.fill(arc);
                             g2.setPaint(Color.BLACK);
-                            arc.setArcByCenter(x, y, size * 1.6, 0, 360, Arc2D.OPEN);
+                            arc.setArcByCenter(x, y, size * 2.9, 0, 360, Arc2D.OPEN);
                             g2.fill(arc);
                             g2.setPaint(Color.ORANGE);
-                            arc.setArcByCenter(x, y, size * 1.4, 0, 360, Arc2D.OPEN);
+                            arc.setArcByCenter(x, y, size * 2.4, 0, 360, Arc2D.OPEN);
                             g2.fill(arc);
                             g2.setPaint(Color.BLACK);
-                            arc.setArcByCenter(x, y, size * 1.2, 0, 360, Arc2D.OPEN);
+                            arc.setArcByCenter(x, y, size * 1.9, 0, 360, Arc2D.OPEN);
                             g2.fill(arc);
                         }
                         if ((null != selectedSystem) && selectedSystem.equals(system)) {
-                            // let's try rings
+                            // Draw the selection marker as TWO concentric stroked outlines (a white outer
+                            // ring and a thinner white inner ring with a black gap between them) instead of
+                            // filled discs. Filled discs on a full 360-degree arc with Arc2D.OPEN fill the
+                            // entire interior, which would obliterate the orange "current location" rings
+                            // (radii 1.2-1.8) and the cyan "GM override" outline (radius size + 2.5) drawn
+                            // underneath when a system is both your current location, an override, and
+                            // selected.
+                            Stroke oldStroke = g2.getStroke();
                             g2.setPaint(Color.WHITE);
-                            arc.setArcByCenter(x, y, size * 1.8, 0, 360, Arc2D.OPEN);
-                            g2.fill(arc);
-                            g2.setPaint(Color.BLACK);
-                            arc.setArcByCenter(x, y, size * 1.6, 0, 360, Arc2D.OPEN);
-                            g2.fill(arc);
-                            g2.setPaint(Color.WHITE);
-                            arc.setArcByCenter(x, y, size * 1.4, 0, 360, Arc2D.OPEN);
-                            g2.fill(arc);
-                            g2.setPaint(Color.BLACK);
-                            arc.setArcByCenter(x, y, size * 1.2, 0, 360, Arc2D.OPEN);
-                            g2.fill(arc);
+                            g2.setStroke(new BasicStroke(2.5f));
+                            arc.setArcByCenter(x, y, size * 2.2, 0, 360, Arc2D.OPEN);
+                            g2.draw(arc);
+                            arc.setArcByCenter(x, y, size * 1.95, 0, 360, Arc2D.OPEN);
+                            g2.draw(arc);
+                            g2.setStroke(oldStroke);
                         }
 
                         // if factions are selected, then we need to do it differently, because
@@ -847,6 +860,16 @@ public class InterstellarMapPanel extends JPanel {
                                 g2.setStroke(oldStroke);
                             }
                         }
+
+                        // GM-edited system marker: thin cyan outline ring so the player can spot non-canon edits.
+                        if (campaign.hasPlanetarySystemOverride(system.getId())) {
+                            Stroke oldStroke = g2.getStroke();
+                            g2.setPaint(Color.CYAN);
+                            g2.setStroke(new BasicStroke(2.0f));
+                            arc.setArcByCenter(x, y, size + 2.5, 0, 360, Arc2D.OPEN);
+                            g2.draw(arc);
+                            g2.setStroke(oldStroke);
+                        }
                     }
                 }
 
@@ -858,9 +881,9 @@ public class InterstellarMapPanel extends JPanel {
                         double y = map2scrY(system.getY());
                         if ((conf.showPlanetNamesThreshold == 0) || (conf.scale > conf.showPlanetNamesThreshold)
                                   || jumpPath.contains(system)
-                                  || ((InterstellarMapPanel.this.campaign.getLocation().getJumpPath() != null)
+                                  || ((InterstellarMapPanel.this.campaign.getCurrentLocation().getJumpPath() != null)
                                             &&
-                                            InterstellarMapPanel.this.campaign.getLocation()
+                                            InterstellarMapPanel.this.campaign.getCurrentLocation()
                                                   .getJumpPath()
                                                   .contains(system))) {
                             final String planetName = system.getPrintableName(InterstellarMapPanel.this.campaign.getLocalDate());
@@ -972,8 +995,16 @@ public class InterstellarMapPanel extends JPanel {
 
     public void setCampaign(Campaign c) {
         this.campaign = c;
-        this.systems = campaign.getSystems();
+        refreshSystemsFromCampaign();
         repaint();
+    }
+
+    private void refreshSystemsFromCampaign() {
+        String selectedSystemId = selectedSystem == null ? null : selectedSystem.getId();
+        this.systems = campaign.getSystems();
+        if (selectedSystemId != null) {
+            selectedSystem = campaign.getSystemById(selectedSystemId);
+        }
     }
 
     public void setJumpPath(JumpPath path) {
@@ -1278,7 +1309,7 @@ public class InterstellarMapPanel extends JPanel {
         }
 
         if (optAcademies.isSelected()) {
-            int academyCount = MathUtility.clamp(system.getFilteredAcademies(campaign).size(), 0, 6);
+            int academyCount = Math.clamp(system.getFilteredAcademies(campaign).size(), 0, 6);
 
             return switch (academyCount) {
                 case 6 -> new Color(253, 231, 37);
@@ -1304,7 +1335,7 @@ public class InterstellarMapPanel extends JPanel {
         if (optDiseases.isSelected()) {
             Set<InjuryType> diseases = getAllActiveDiseases(system.getId(), campaign.getLocalDate(), true);
             diseases.addAll(getAllActiveBioweapons(system.getId(), campaign.getLocalDate(), true));
-            
+
             int diseaseCount = min(4, diseases.size());
             return switch (diseaseCount) {
                 case 1 -> new Color(253, 231, 37);
@@ -1334,6 +1365,26 @@ public class InterstellarMapPanel extends JPanel {
      * }
      */
 
+    /**
+     * Opens the GM-only planetary system editor pre-selected on the given system. Refreshes and repaints the map after
+     * the dialog closes so saved planetary overrides are drawn from the campaign overlay.
+     */
+    private void openPlanetarySystemEditor(PlanetarySystem system) {
+        if ((system == null) || !campaign.isGM()) {
+            return;
+        }
+        PlanetarySystemEditorDialog dialog = new PlanetarySystemEditorDialog(hqView.getFrame(), campaign);
+        dialog.selectSystemById(system.getId());
+        dialog.addWindowListener(new java.awt.event.WindowAdapter() {
+            @Override
+            public void windowClosed(java.awt.event.WindowEvent e) {
+                refreshSystemsFromCampaign();
+                repaint();
+            }
+        });
+        dialog.setVisible(true);
+    }
+
     private final transient List<ActionListener> listeners = new ArrayList<>();
 
     public void addActionListener(ActionListener l) {
@@ -1342,6 +1393,7 @@ public class InterstellarMapPanel extends JPanel {
         }
     }
 
+    @Deprecated(since = "0.51.0", forRemoval = true)
     public void removeActionListener(ActionListener l) {
         listeners.remove(l);
     }

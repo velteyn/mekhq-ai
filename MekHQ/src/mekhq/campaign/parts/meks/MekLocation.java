@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2009 Jay Lawson (jaylawson39 at yahoo.com). All rights reserved.
- * Copyright (C) 2013-2025 The MegaMek Team. All Rights Reserved.
+ * Copyright (C) 2013-2026 The MegaMek Team. All Rights Reserved.
  *
  * This file is part of MekHQ.
  *
@@ -40,7 +40,6 @@ import java.util.Set;
 import java.util.StringJoiner;
 import java.util.stream.IntStream;
 
-import megamek.codeUtilities.MathUtility;
 import megamek.common.CriticalSlot;
 import megamek.common.TechAdvancement;
 import megamek.common.annotations.Nullable;
@@ -301,6 +300,7 @@ public class MekLocation extends Part {
                      passesSensorCheck;
     }
 
+    @Deprecated(since = "0.51.0", forRemoval = true)
     private boolean bothPartsHaveSensors(MekLocation other, boolean notForWarehouseOrPartsInUse) {
         boolean thisHasUnit = getUnit() != null;
         boolean otherHasUnit = other.getUnit() != null;
@@ -326,7 +326,7 @@ public class MekLocation extends Part {
      * @param percent The percent armor remaining, expressed as a fraction.
      */
     public void setPercent(double percent) {
-        this.percent = MathUtility.clamp(percent, 0.0, 1.0);
+        this.percent = Math.clamp(percent, 0.0, 1.0);
     }
 
     @Override
@@ -450,10 +450,10 @@ public class MekLocation extends Part {
 
             if (salvage) {
                 // Return this part to the warehouse as a spare
-                getCampaign().getWarehouse().addPart(this);
+                getWarehouse().addPart(this);
             } else {
                 // Remove this part from the campaign
-                getCampaign().getWarehouse().removePart(this);
+                getWarehouse().removePart(this);
             }
 
             if (getLoc() != Mek.LOC_CENTER_TORSO) {
@@ -933,7 +933,7 @@ public class MekLocation extends Part {
 
     @Override
     public String getDesc() {
-        if ((!isBreached() && !isBlownOff())) {
+        if (isDamagedBeyondRepair() || (!isBreached() && !isBlownOff())) {
             return super.getDesc();
         }
         StringBuilder toReturn = new StringBuilder();

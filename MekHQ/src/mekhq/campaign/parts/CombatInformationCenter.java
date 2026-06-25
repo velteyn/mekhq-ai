@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019-2025 The MegaMek Team. All Rights Reserved.
+ * Copyright (C) 2019-2026 The MegaMek Team. All Rights Reserved.
  *
  * This file is part of MekHQ.
  *
@@ -55,6 +55,7 @@ import org.w3c.dom.NodeList;
 public class CombatInformationCenter extends Part {
     private Money cost;
 
+    @Deprecated(since = "0.51.0", forRemoval = true)
     public CombatInformationCenter() {
         this(0, Money.zero(), null);
     }
@@ -146,12 +147,12 @@ public class CombatInformationCenter extends Part {
     public void remove(boolean salvage) {
         if (null != unit && unit.getEntity() instanceof Aero) {
             ((Aero) unit.getEntity()).setCICHits(3);
-            Part spare = campaign.getWarehouse().checkForExistingSparePart(this);
+            Part spare = getWarehouse().checkForExistingSparePart(this);
             if (!salvage) {
-                campaign.getWarehouse().removePart(this);
+                getWarehouse().removePart(this);
             } else if (null != spare) {
                 spare.changeQuantity(1);
-                campaign.getWarehouse().removePart(this);
+                getWarehouse().removePart(this);
             }
             unit.removePart(this);
             Part missing = getMissingPart();

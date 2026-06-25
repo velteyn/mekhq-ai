@@ -37,9 +37,6 @@ import static megamek.common.compute.Compute.d6;
 import static megamek.common.enums.SkillLevel.ELITE;
 import static megamek.common.enums.SkillLevel.GREEN;
 import static megamek.common.enums.SkillLevel.LEGENDARY;
-import static mekhq.campaign.camOpsReputation.IUnitRating.DRAGOON_A;
-import static mekhq.campaign.camOpsReputation.IUnitRating.DRAGOON_ASTAR;
-import static mekhq.campaign.camOpsReputation.IUnitRating.DRAGOON_F;
 import static mekhq.campaign.randomEvents.prisoners.PrisonerEventManager.DEFAULT_TEMPORARY_CAPACITY;
 import static mekhq.utilities.MHQInternationalization.getFormattedTextAt;
 import static mekhq.utilities.MHQInternationalization.getTextAt;
@@ -584,13 +581,13 @@ public class MHQMorale {
     public static void routedMoraleUpdate(Campaign campaign, AtBContract contract) {
         if (contract.getMoraleLevel().isRouted()) {
             LocalDate today = campaign.getLocalDate();
-            StratConCampaignState campaignState = contract.getStratconCampaignState();
+            StratConCampaignState campaignState = contract.getStratConCampaignState();
             boolean canEarlyFinish = campaignState == null || campaignState.allowEarlyVictory();
 
             // Additional morale updates if morale level is set to 'Routed' and the contract type is either a garrison
             // type or doesn't allow early contract completion
             if (!canEarlyFinish || contract.getContractType().isGarrisonType()) {
-                contract.setRoutEnd(today.plusMonths(max(1, d6() - 3)).minusDays(1));
+                contract.setRoutEndDate(today.plusMonths(max(1, d6() - 3)).minusDays(1));
 
                 PrisonerMissionEndEvent prisoners = new PrisonerMissionEndEvent(campaign, contract);
                 if (!campaign.getFriendlyPrisoners().isEmpty()) {
@@ -607,7 +604,7 @@ public class MHQMorale {
                       "stratCon.earlyContractEnd.objectives", contract.getName()), true);
                 int remainingMonths = contract.getMonthsLeft(campaign.getLocalDate().plusDays(1));
                 contract.setRoutedPayout(contract.getMonthlyPayOut().multipliedBy(remainingMonths));
-                contract.setEndDate(today.plusDays(1));
+                contract.setEndingDate(today.plusDays(1));
             }
         }
     }

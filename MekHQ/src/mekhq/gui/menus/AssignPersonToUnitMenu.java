@@ -41,6 +41,9 @@ import javax.swing.JMenuItem;
 
 import megamek.common.units.*;
 import mekhq.campaign.Campaign;
+import mekhq.campaign.Hangar;
+import mekhq.campaign.base.AbstractBase;
+import mekhq.campaign.location.LocationUtils;
 import mekhq.campaign.personnel.Person;
 import mekhq.campaign.personnel.enums.PersonnelRole;
 import mekhq.campaign.personnel.enums.Profession;
@@ -183,8 +186,15 @@ public class AssignPersonToUnitMenu extends JScrollableMenu {
             int unitType = -1;
             int weightClass = -1;
 
+            // Use the hangar at the persons' effective location: base hangar when at a base,
+            // campaign hangar when in the main force. All selected persons must be co-located
+            // (enforced above via the in-transit check and the unit co-location filter below).
+            AbstractBase effectiveBase = LocationUtils.findEffectiveBase(people[0]);
+            Hangar sourceHangar = (effectiveBase != null)
+                  ? effectiveBase.getBaseHangar()
+                  : campaign.getHangar();
             final List<Unit> units = HangarSorter.defaultSorting()
-                                           .sort(campaign.getHangar().getUnitsStream().filter(Unit::isAvailable))
+                                           .sort(sourceHangar.getUnitsStream().filter(Unit::isAvailable))
                                            .toList();
             for (final Unit unit : units) {
                 Entity entity = unit.getEntity();
@@ -273,20 +283,14 @@ public class AssignPersonToUnitMenu extends JScrollableMenu {
                                      entity.isSuperHeavy() ||
                                      entity.isTripodMek() ||
                                      entity.isQuadMek())) {
-                        final boolean valid;
-                        if (entity instanceof Mek) {
-                            valid = areAllBattleMekPilots;
-                        } else if (entity instanceof ProtoMek) {
-                            valid = areAllProtoMekPilots;
-                        } else if (entity instanceof ConvFighter) {
-                            valid = areAllConventionalAircraftPilots;
-                        } else if (entity instanceof Aero) {
-                            valid = areAllAerospacePilots;
-                        } else if (entity instanceof VTOL) {
-                            valid = areAllVTOLCrew;
-                        } else {
-                            valid = false;
-                        }
+                        final boolean valid = switch (entity) {
+                            case Mek ignored -> areAllBattleMekPilots;
+                            case ProtoMek ignored -> areAllProtoMekPilots;
+                            case ConvFighter ignored -> areAllConventionalAircraftPilots;
+                            case Aero ignored -> areAllAerospacePilots;
+                            case VTOL ignored -> areAllVTOLCrew;
+                            default -> false;
+                        };
 
                         if (valid) {
                             final JMenuItem miPilot = new JMenuItem(unit.getName());

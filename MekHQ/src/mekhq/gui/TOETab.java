@@ -49,6 +49,7 @@ import javax.swing.*;
 import javax.swing.tree.TreeSelectionModel;
 
 import megamek.common.event.Subscribe;
+import megamek.common.ui.FastJScrollPane;
 import mekhq.MekHQ;
 import mekhq.campaign.events.DeploymentChangedEvent;
 import mekhq.campaign.events.NetworkChangedEvent;
@@ -77,7 +78,6 @@ import mekhq.gui.handler.TOETransferHandler;
 import mekhq.gui.model.CrewListModel;
 import mekhq.gui.model.OrgTreeModel;
 import mekhq.gui.panels.TutorialHyperlinkPanel;
-import mekhq.gui.utilities.JScrollPaneWithSpeed;
 import mekhq.gui.view.ForceViewPanel;
 import mekhq.gui.view.PersonViewPanel;
 import mekhq.gui.view.UnitViewPanel;
@@ -95,7 +95,6 @@ public final class TOETab extends CampaignGuiTab {
     //region Constructors
     public TOETab(CampaignGUI gui, String name) {
         super(gui, name);
-        MekHQ.registerHandler(this);
     }
     //endregion Constructors
 
@@ -200,7 +199,7 @@ public final class TOETab extends CampaignGuiTab {
         // Check if this is a StratCon scenario
         boolean isStratConScenario = selectedScenario instanceof AtBDynamicScenario &&
                                            selectedMission instanceof AtBContract atbContract &&
-                                           atbContract.getStratconCampaignState() != null;
+                                           atbContract.getStratConCampaignState() != null;
 
         if (isStratConScenario) {
             deployToStratCon(selectedScenario);
@@ -221,9 +220,9 @@ public final class TOETab extends CampaignGuiTab {
      * @since 0.50.10
      */
     private void deployToStratCon(Scenario selectedScenario) {
-        if (getCampaignGui().getTab(MHQTabType.STRAT_CON) instanceof StratConTab stratConTab) {
-            MaplessStratCon.deployWithoutMap(stratConTab.getStratconPanel(), getCampaign(), selectedScenario);
-        }
+        getCampaignGui().getStratConTab().ifPresent(
+              tab -> MaplessStratCon.deployWithoutMap(tab.getStratconPanel(),
+                    getCampaign(), selectedScenario));
     }
 
     /**
@@ -242,10 +241,10 @@ public final class TOETab extends CampaignGuiTab {
     private void deployToRegularScenario(Scenario selectedScenario) {
         // Get available forces
         List<Formation> formationOptions = getCampaign().getCombatTeamsAsList().stream()
-                                         .map(combatTeam -> getCampaign().getFormation(combatTeam.getFormationId()))
-                                         .filter(force -> force != null && !force.isDeployed())
-                                         .sorted(Comparator.comparing(Formation::getFullName))
-                                         .toList();
+                                                 .map(combatTeam -> getCampaign().getFormation(combatTeam.getFormationId()))
+                                                 .filter(force -> force != null && !force.isDeployed())
+                                                 .sorted(Comparator.comparing(Formation::getFullName))
+                                                 .toList();
 
         // Show force picker
         MaplessStratConForcePicker forcePicker = new MaplessStratConForcePicker(getCampaign(), formationOptions);
@@ -301,7 +300,7 @@ public final class TOETab extends CampaignGuiTab {
             if (crewSize > 0) {
                 JPanel crewPanel = new JPanel(new BorderLayout());
                 crewPanel.getAccessibleContext().setAccessibleName("Crew for " + unit.getName());
-                final JScrollPane scrollPerson = new JScrollPaneWithSpeed();
+                final JScrollPane scrollPerson = new FastJScrollPane();
                 scrollPerson.setBorder(null);
                 crewPanel.add(scrollPerson, BorderLayout.CENTER);
                 CrewListModel model = new CrewListModel();
@@ -312,7 +311,7 @@ public final class TOETab extends CampaignGuiTab {
                  */
                 final JList<Person> crewList = getCrewList(model, scrollPerson);
                 if (crewSize > 1) {
-                    JScrollPaneWithSpeed crewScrollPane = new JScrollPaneWithSpeed(crewList);
+                    FastJScrollPane crewScrollPane = new FastJScrollPane(crewList);
                     crewScrollPane.setBorder(null);
                     crewPanel.add(crewScrollPane, BorderLayout.NORTH);
                 }
@@ -324,7 +323,7 @@ public final class TOETab extends CampaignGuiTab {
                 tabUnit.add(name, crewPanel);
                 SwingUtilities.invokeLater(() -> scrollPerson.getVerticalScrollBar().setValue(0));
             }
-            final JScrollPane scrollUnit = new JScrollPaneWithSpeed(new UnitViewPanel(unit, getCampaign()));
+            final JScrollPane scrollUnit = new FastJScrollPane(new UnitViewPanel(unit, getCampaign()));
             scrollUnit.setBorder(null);
             tabUnit.add("Unit", scrollUnit);
             panForceView.add(tabUnit, BorderLayout.CENTER);
@@ -336,7 +335,7 @@ public final class TOETab extends CampaignGuiTab {
             // We can ignore here because if the selected index is out of bounds, we're just going
             // to not select the unit in the TO&E.
         } else if (node instanceof Formation) {
-            final JScrollPane scrollForce = new JScrollPaneWithSpeed(new ForceViewPanel((Formation) node, getCampaign()));
+            final JScrollPane scrollForce = new FastJScrollPane(new ForceViewPanel((Formation) node, getCampaign()));
             scrollForce.setBorder(null);
             panForceView.add(scrollForce, BorderLayout.CENTER);
             panForceView.setBorder(null);

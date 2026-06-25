@@ -57,7 +57,7 @@ public class OtherModifiers {
      */
     protected static Map<String, Integer> calculateOtherModifiers(Campaign campaign) {
         // Calculate inactive years if campaign options allow
-        int inactiveYears = campaign.getCampaignOptions().isUseAtB() ? getInactiveYears(campaign) : 0;
+        int inactiveYears = campaign.getCampaignOptions().isUseStratCon() ? getInactiveYears(campaign) : 0;
         int manualModifier = campaign.getCampaignOptions().getManualUnitRatingModifier();
 
         // Crime rating improvements are handled on New Day, so are not included here.

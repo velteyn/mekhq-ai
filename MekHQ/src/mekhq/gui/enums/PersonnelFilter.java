@@ -312,6 +312,7 @@ public enum PersonnelFilter {
         return this == DEPENDENT;
     }
 
+    @Deprecated(since = "0.51.0", forRemoval = true)
     public boolean isCampFollower() {
         return this == CAMP_FOLLOWER;
     }
@@ -507,9 +508,9 @@ public enum PersonnelFilter {
             case ON_LEAVE -> status.isOnLeave() || status.isOnMaternityLeave();
             case MIA -> status.isMIA() || status.isPoW();
             case RETIRED -> status.isRetired();
-            case RESIGNED -> ((status.isResigned()) || (status.isLeft()));
+            case RESIGNED -> status.isResigned() || status.isLeft();
             case AWOL -> status.isAwol();
-            case DESERTED -> status.isDeserted();
+            case DESERTED -> status.isDeserted() || status.isDefected();
             case STUDENT -> status.isStudent();
             case MISSING -> status.isMissing();
             case KIA -> status.isKIA();

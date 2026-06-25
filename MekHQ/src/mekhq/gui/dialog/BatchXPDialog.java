@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2025 The MegaMek Team. All Rights Reserved.
+ * Copyright (C) 2016-2026 The MegaMek Team. All Rights Reserved.
  *
  * This file is part of MekHQ.
  *
@@ -51,8 +51,8 @@ import javax.swing.table.TableColumn;
 import javax.swing.table.TableRowSorter;
 
 import megamek.client.ui.models.XTableColumnModel;
-import megamek.codeUtilities.MathUtility;
 import megamek.common.enums.SkillLevel;
+import megamek.common.ui.FastJScrollPane;
 import megamek.logging.MMLogger;
 import mekhq.MekHQ;
 import mekhq.campaign.Campaign;
@@ -65,7 +65,6 @@ import mekhq.campaign.personnel.skills.Skill;
 import mekhq.campaign.personnel.skills.SkillType;
 import mekhq.gui.enums.PersonnelTableModelColumn;
 import mekhq.gui.model.PersonnelTableModel;
-import mekhq.gui.utilities.JScrollPaneWithSpeed;
 
 public final class BatchXPDialog extends JDialog {
     private static final MMLogger LOGGER = MMLogger.create(BatchXPDialog.class);
@@ -147,7 +146,7 @@ public final class BatchXPDialog extends JDialog {
             tableColumn.setCellRenderer(getRenderer());
             columnModel.setColumnVisible(tableColumn, true);
 
-            personnelSorter.setComparator(column.ordinal(), column.getComparator(campaign));
+            personnelSorter.setComparator(column.ordinal(), column.getComparator());
             final SortOrder sortOrder = column.getDefaultSortOrder();
             if (sortOrder != null) {
                 sortKeys.add(new SortKey(column.ordinal(), sortOrder));
@@ -158,7 +157,7 @@ public final class BatchXPDialog extends JDialog {
         personnelSorter.setRowFilter(personnelFilter);
         personnelTable.setRowSorter(personnelSorter);
 
-        final JScrollPane pane = new JScrollPaneWithSpeed(personnelTable);
+        final JScrollPane pane = new FastJScrollPane(personnelTable);
         pane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
         return pane;
     }
@@ -287,7 +286,7 @@ public final class BatchXPDialog extends JDialog {
                     skillLevel.setEnabled(true);
                     ((SpinnerNumberModel) skillLevel.getModel()).setMaximum(maxSkillLevel);
                     skillLevel.getModel()
-                          .setValue(MathUtility.clamp((Integer) skillLevel.getModel().getValue(), 1, maxSkillLevel));
+                          .setValue(Math.clamp((Integer) skillLevel.getModel().getValue(), 0, maxSkillLevel));
                     buttonSpendXP.setEnabled(true);
                 }
             }
@@ -390,19 +389,22 @@ public final class BatchXPDialog extends JDialog {
                 Skill skill = person.getSkill(skillName);
 
                 if (skill != null) {
+                    // Capture current XP progress so we can apply it as a discount, then consume progress up to the improvement cost.
                     int progress = skill.getXpProgress();
                     skill.changeXpProgress(-cost);
                     cost = max(0, cost - progress);
                 }
 
-                // Improve the skill and deduce the cost
+                // Improve the skill and deduct the cost
                 person.improveSkill(skillName);
                 person.spendXPOnSkills(campaign, cost);
+
+                skill = person.getSkill(skillName);
 
                 PerformanceLogger.improvedSkill(campaignOptions.isPersonnelLogSkillGain(),
                       person,
                       campaign.getLocalDate(),
-                      skill.getType().getName(),
+                      skillName,
                       skill.getLevel());
                 campaign.personUpdated(person);
             }

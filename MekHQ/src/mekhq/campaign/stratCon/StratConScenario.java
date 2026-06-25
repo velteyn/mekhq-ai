@@ -116,7 +116,7 @@ public class StratConScenario implements IStratConDisplayable {
     private LocalDate returnDate;
     private StratConCoords coords;
     private int numDefensivePoints;
-    private boolean ignoreForceAutoAssignment;
+    private boolean overrideForceAutoAssignment;
     private int leadershipPointsUsed;
     private Set<Integer> failedReinforcements = new HashSet<>();
     private ArrayList<Integer> primaryForceIDs = new ArrayList<>();
@@ -337,6 +337,7 @@ public class StratConScenario implements IStratConDisplayable {
               getName());
     }
 
+    @Deprecated(since = "0.51.0", forRemoval = true)
     public int getRequiredPlayerLances() {
         return requiredPlayerLances;
     }
@@ -465,6 +466,7 @@ public class StratConScenario implements IStratConDisplayable {
         this.numDefensivePoints = numDefensivePoints;
     }
 
+    @Deprecated(since = "0.51.0", forRemoval = true)
     public void useDefensivePoint() {
         numDefensivePoints--;
     }
@@ -481,16 +483,17 @@ public class StratConScenario implements IStratConDisplayable {
         failedReinforcements.add(forceID);
     }
 
+    @Deprecated(since = "0.51.0", forRemoval = true)
     public void removeFailedReinforcements(int forceID) {
         failedReinforcements.remove(forceID);
     }
 
-    public boolean ignoreForceAutoAssignment() {
-        return ignoreForceAutoAssignment;
+    public boolean overrideForceAutoAssignment() {
+        return overrideForceAutoAssignment;
     }
 
-    public void setIgnoreForceAutoAssignment(boolean ignoreForceAutoAssignment) {
-        this.ignoreForceAutoAssignment = ignoreForceAutoAssignment;
+    public void setOverrideForceAutoAssignment(boolean overrideForceAutoAssignment) {
+        this.overrideForceAutoAssignment = overrideForceAutoAssignment;
     }
 
     public int getLeadershipPointsUsed() {
@@ -545,7 +548,7 @@ public class StratConScenario implements IStratConDisplayable {
 
             AtBContract contract = backingScenario.getContract(campaign);
 
-            campaignState = contract.getStratconCampaignState();
+            campaignState = contract.getStratConCampaignState();
 
             if (campaignState == null) {
                 return null;
@@ -612,7 +615,7 @@ public class StratConScenario implements IStratConDisplayable {
             if (contract == null) {
                 return;
             }
-            StratConCampaignState campaignState = contract.getStratconCampaignState();
+            StratConCampaignState campaignState = contract.getStratConCampaignState();
 
             StratConTrackState track = getTrackForScenario(campaign, campaignState);
             for (Formation formation : campaign.getAllFormations()) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017-2025 The MegaMek Team. All Rights Reserved.
+ * Copyright (C) 2017-2026 The MegaMek Team. All Rights Reserved.
  *
  * This file is part of MekHQ.
  *
@@ -64,6 +64,7 @@ import megamek.client.ui.util.ViewFormatting;
 import megamek.common.annotations.Nullable;
 import megamek.common.event.Subscribe;
 import megamek.common.rolls.TargetRoll;
+import megamek.common.ui.FastJScrollPane;
 import megamek.logging.MMLogger;
 import mekhq.MekHQ;
 import mekhq.campaign.events.AcquisitionEvent;
@@ -78,12 +79,15 @@ import mekhq.campaign.events.parts.PartWorkEvent;
 import mekhq.campaign.events.persons.PersonEvent;
 import mekhq.campaign.events.scenarios.ScenarioResolvedEvent;
 import mekhq.campaign.events.units.UnitEvent;
+import mekhq.campaign.location.ILocation;
+import mekhq.campaign.location.LocationUtils;
 import mekhq.campaign.parts.Part;
 import mekhq.campaign.parts.PodSpace;
 import mekhq.campaign.personnel.Person;
 import mekhq.campaign.personnel.skills.Skill;
 import mekhq.campaign.personnel.skills.SkillModifierData;
 import mekhq.campaign.personnel.skills.SkillType;
+import mekhq.campaign.stratCon.StratConRulesManager;
 import mekhq.campaign.unit.Unit;
 import mekhq.campaign.work.IPartWork;
 import mekhq.gui.adapter.ServicedUnitsTableMouseAdapter;
@@ -94,6 +98,7 @@ import mekhq.gui.baseComponents.roundedComponents.RoundedMMToggleButton;
 import mekhq.gui.dialog.AcquisitionsDialog;
 import mekhq.gui.dialog.MRMSDialog;
 import mekhq.gui.enums.MHQTabType;
+import mekhq.gui.model.LocationFilterItem;
 import mekhq.gui.model.TaskTableModel;
 import mekhq.gui.model.TechTableModel;
 import mekhq.gui.model.UnitTableModel;
@@ -102,7 +107,6 @@ import mekhq.gui.sorter.TaskSorter;
 import mekhq.gui.sorter.TechSorter;
 import mekhq.gui.sorter.UnitStatusSorter;
 import mekhq.gui.sorter.UnitTypeSorter;
-import mekhq.gui.utilities.JScrollPaneWithSpeed;
 import mekhq.service.PartsAcquisitionService;
 import mekhq.service.enums.MRMSMode;
 import mekhq.service.mrms.MRMSService;
@@ -122,6 +126,7 @@ public final class RepairTab extends CampaignGuiTab implements ITechWorkPanel {
     private JTextPane txtServicedUnitView;
     private JTextArea textTarget;
     private JTextPane txtResult;
+    private RoundedMMToggleButton btnOvertime;
     private JLabel asTechPoolLabel;
     private JComboBox<String> choiceLocation;
     private RoundedJButton btnAcquisitions;
@@ -144,7 +149,6 @@ public final class RepairTab extends CampaignGuiTab implements ITechWorkPanel {
     // region Constructors
     public RepairTab(CampaignGUI gui, String name) {
         super(gui, name);
-        MekHQ.registerHandler(this);
         setUserPreferences();
     }
     // endregion Constructors
@@ -262,7 +266,7 @@ public final class RepairTab extends CampaignGuiTab implements ITechWorkPanel {
         servicedUnitTable.setShowGrid(false);
         servicedUnitTable.getSelectionModel().addListSelectionListener(this::servicedUnitTableValueChanged);
         ServicedUnitsTableMouseAdapter.connect(getCampaignGui(), servicedUnitTable, servicedUnitModel);
-        JScrollPane scrollServicedUnitTable = new JScrollPaneWithSpeed(servicedUnitTable);
+        JScrollPane scrollServicedUnitTable = new FastJScrollPane(servicedUnitTable);
         scrollServicedUnitTable.setBorder(RoundedLineBorder.createRoundedLineBorder());
         scrollServicedUnitTable.setMinimumSize(new Dimension(350, 200));
         scrollServicedUnitTable.setPreferredSize(new Dimension(350, 200));
@@ -270,7 +274,7 @@ public final class RepairTab extends CampaignGuiTab implements ITechWorkPanel {
         txtServicedUnitView = new JTextPane();
         txtServicedUnitView.setEditable(false);
         txtServicedUnitView.setContentType("text/html");
-        scrollServicedUnitView = new JScrollPaneWithSpeed(txtServicedUnitView);
+        scrollServicedUnitView = new FastJScrollPane(txtServicedUnitView);
         scrollServicedUnitView.setBorder(RoundedLineBorder.createRoundedLineBorder());
         scrollServicedUnitView.setMinimumSize(new Dimension(350, 400));
         scrollServicedUnitView.setPreferredSize(new Dimension(350, 400));
@@ -302,7 +306,7 @@ public final class RepairTab extends CampaignGuiTab implements ITechWorkPanel {
         sortKeys = new ArrayList<>();
         sortKeys.add(new RowSorter.SortKey(0, SortOrder.ASCENDING));
         techSorter.setSortKeys(sortKeys);
-        JScrollPane scrollTechTable = new JScrollPaneWithSpeed(techTable);
+        JScrollPane scrollTechTable = new FastJScrollPane(techTable);
         scrollTechTable.setBorder(RoundedLineBorder.createRoundedLineBorder());
         scrollTechTable.setMinimumSize(new Dimension(200, 200));
         scrollTechTable.setPreferredSize(new Dimension(300, 300));
@@ -368,7 +372,7 @@ public final class RepairTab extends CampaignGuiTab implements ITechWorkPanel {
         textTarget.setWrapStyleWord(true);
         textTarget.setBorder(null);
         textTarget.setName("textTarget");
-        JScrollPane scrTextTarget = new JScrollPaneWithSpeed(textTarget);
+        JScrollPane scrTextTarget = new FastJScrollPane(textTarget);
         scrTextTarget.setBorder(RoundedLineBorder.createRoundedLineBorder());
 
         gridBagConstraints = new GridBagConstraints();
@@ -422,7 +426,7 @@ public final class RepairTab extends CampaignGuiTab implements ITechWorkPanel {
         sortKeys.add(new RowSorter.SortKey(0, SortOrder.ASCENDING));
         taskSorter.setSortKeys(sortKeys);
         TaskTableMouseAdapter.connect(getCampaignGui(), taskTable, taskModel);
-        JScrollPane scrollTaskTable = new JScrollPaneWithSpeed(taskTable);
+        JScrollPane scrollTaskTable = new FastJScrollPane(taskTable);
         scrollTaskTable.setMinimumSize(new Dimension(200, 200));
         scrollTaskTable.setPreferredSize(new Dimension(300, 300));
 
@@ -456,18 +460,27 @@ public final class RepairTab extends CampaignGuiTab implements ITechWorkPanel {
         gridBagConstraints.weighty = 1.0;
         panTechs.add(scrollTechTable, gridBagConstraints);
 
-        asTechPoolLabel = new JLabel("<html><b>AsTech Pool Minutes:</> " +
-                                           getCampaign().getAsTechPoolMinutes() +
-                                           " (" +
-                                           getCampaign().getNumberAsTechs() +
-                                           " AsTechs)</html>");
-        asTechPoolLabel.setHorizontalAlignment(SwingConstants.CENTER);
-        asTechPoolLabel.setName("asTechPoolLabel");
+        btnOvertime = new RoundedMMToggleButton(resourceMap.getString("btnOvertime.text"));
+        btnOvertime.setToolTipText(resourceMap.getString("btnOvertime.toolTipText"));
+        btnOvertime.addActionListener(evt -> {
+            getCampaign().setOvertime(btnOvertime.isSelected());
+            refreshAsTechPool();
+            WarehouseTab warehouseTab = getCampaignGui().getWarehouseTab();
+            warehouseTab.refreshAsTechPool();
+            warehouseTab.refreshOvertimeStatus();
+        });
         gridBagConstraints = new GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 2;
+        gridBagConstraints.anchor = GridBagConstraints.WEST;
+        panTechs.add(btnOvertime, gridBagConstraints);
+
+        asTechPoolLabel = new JLabel();
+        asTechPoolLabel.setName("asTechPoolLabel");
+        gridBagConstraints = new GridBagConstraints();
+        gridBagConstraints.gridx = 1;
+        gridBagConstraints.gridy = 2;
         gridBagConstraints.gridwidth = 2;
-        gridBagConstraints.insets = new Insets(0, 10, 0, 0);
         gridBagConstraints.anchor = GridBagConstraints.WEST;
         panTechs.add(asTechPoolLabel, gridBagConstraints);
 
@@ -485,6 +498,7 @@ public final class RepairTab extends CampaignGuiTab implements ITechWorkPanel {
         add(pnlTutorial, BorderLayout.SOUTH);
 
         filterTechs();
+        refreshAsTechPool();
     }
 
     private RoundedJButton getBtnMRMSInstantAll() {
@@ -568,6 +582,7 @@ public final class RepairTab extends CampaignGuiTab implements ITechWorkPanel {
         refreshTaskList();
         refreshPartsAcquisition();
         refreshTechsList();
+        refreshOvertimeStatus();
     }
 
     /*
@@ -782,6 +797,12 @@ public final class RepairTab extends CampaignGuiTab implements ITechWorkPanel {
                 }
                 TechTableModel techModel = entry.getModel();
                 Person tech = techModel.getTechAt(entry.getIdentifier());
+                // Tech must be at the same location as the unit being repaired
+                ILocation repairTarget = (unit != null) ? unit
+                      : (part instanceof Part partWithUnit && partWithUnit.getUnit() != null) ? partWithUnit.getUnit() : (ILocation) part;
+                if (!LocationUtils.areSameEffectiveLocation(tech, repairTarget)) {
+                    return false;
+                }
                 if ((unit != null) && unit.isSelfCrewed()) {
                     if (!tech.getPrimaryRole().isVesselCrew()) {
                         return false;
@@ -843,8 +864,19 @@ public final class RepairTab extends CampaignGuiTab implements ITechWorkPanel {
     public void refreshServicedUnitList() {
         UUID uuid = (getSelectedServicedUnit() != null) ? getSelectedServicedUnit().getId() : null;
 
+        LocationFilterItem locationFilter = getCampaignGui().getActiveLocation();
+        List<Unit> candidates = locationFilter.selectUnits(getCampaign());
+
+        List<Unit> serviceable = new ArrayList<>();
+        for (Unit u : candidates) {
+            if (u.isAvailable() && u.isServiceable()
+                      && !StratConRulesManager.isUnitDeployedToStratCon(u)) {
+                serviceable.add(u);
+            }
+        }
+
         ignoreUnitTable = true;
-        servicedUnitModel.setData(getCampaign().getServiceableUnits());
+        servicedUnitModel.setData(serviceable);
         ignoreUnitTable = false;
 
         if (!focusOnUnit(uuid)) {
@@ -936,19 +968,14 @@ public final class RepairTab extends CampaignGuiTab implements ITechWorkPanel {
      * @throws IllegalArgumentException if an invalid row index is provided to the selection methods. This exception is
      *                                  prevented by validating indices against updated row counts.
      */
-    public void refreshTechsList() {
+    private void refreshTechsList() {
         int selected = techTable.getSelectedRow();
         // Get all techs who have more than 0 minutes free, and sort by skill descending (elites at bottom)
         List<Person> techs = getCampaign().getTechs(true);
         techsModel.setData(techs);
         filterTechs();
 
-        String astechString = "<html><b>AsTech Pool Minutes:</> " + getCampaign().getAsTechPoolMinutes();
-        if (getCampaign().isOvertimeAllowed()) {
-            astechString += " [" + getCampaign().getAsTechPoolOvertime() + " overtime]";
-        }
-        astechString += " (" + getCampaign().getNumberAsTechs() + " AsTechs)</html>";
-        asTechPoolLabel.setText(astechString);
+        refreshAsTechPool();
 
         // Ensuring valid row selection after refresh
         if (getCampaignOptions().isResetToFirstTech() && (techTable.getRowCount() > 0)) {
@@ -975,6 +1002,26 @@ public final class RepairTab extends CampaignGuiTab implements ITechWorkPanel {
             techTable.clearSelection(); // Clear selection if there's no valid option
         }
     }
+
+    /**
+     * Updates the AsTech pool statistics (minutes, overtime availability, and AsTech count) in the UI label.
+     */
+    public void refreshAsTechPool() {
+        String astechString = "<html><b>AsTech Pool Minutes:</b> " + getCampaign().getAsTechPoolMinutes();
+        if (getCampaign().isOvertimeAllowed()) {
+            astechString += " [" + getCampaign().getAsTechPoolOvertime() + " overtime]";
+        }
+        astechString += " (" + getCampaign().getNumberAsTechs() + " AsTechs)</html>";
+        asTechPoolLabel.setText(astechString);
+    }
+
+    /**
+     * Updates 'Overtime Allowed' button state.
+     */
+    public void refreshOvertimeStatus() {
+        btnOvertime.setSelected(getCampaign().isOvertimeAllowed());
+    }
+
 
     public void refreshPartsAcquisition() {
         refreshPartsAcquisitionService(true);

@@ -42,6 +42,7 @@ import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -209,8 +210,8 @@ public class AtBDynamicScenario extends AtBScenario {
         // and there's a player force template associated with the first force
         // then return the generated deployment zone associated with the first force
         if (!getForceIDs().isEmpty() &&
-                  playerForceTemplates.containsKey(getForceIDs().get(0))) {
-            return playerForceTemplates.get(getForceIDs().get(0)).getActualDeploymentZone();
+                  playerForceTemplates.containsKey(getForceIDs().getFirst())) {
+            return playerForceTemplates.get(getForceIDs().getFirst()).getActualDeploymentZone();
         }
 
         return super.getStartingPos();
@@ -419,18 +420,21 @@ public class AtBDynamicScenario extends AtBScenario {
      *
      */
     public Person getLanceCommander(Campaign campaign) {
-        if (getForceIDs().isEmpty()) {
+        CombatTeam combatTeam = getPrimaryCombatTeam(campaign.getCombatTeamsAsMap());
+        if (combatTeam == null) {
             return null; // if we don't have forces, just a bunch of units, then get the highest-ranked?
         }
 
-        CombatTeam combatTeam = campaign.getCombatTeamsAsMap().get(getForceIDs().get(0));
+        combatTeam.refreshCommander(campaign);
+        return combatTeam.getCommander(campaign);
+    }
 
-        if (combatTeam != null) {
-            combatTeam.refreshCommander(campaign);
-            return combatTeam.getCommander(campaign);
-        } else {
+    private @Nullable CombatTeam getPrimaryCombatTeam(Hashtable<Integer, CombatTeam> combatTeamHashtable) {
+        if (getForceIDs().isEmpty()) {
             return null;
         }
+
+        return combatTeamHashtable.get(getForceIDs().getFirst());
     }
 
     /**

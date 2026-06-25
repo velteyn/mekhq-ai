@@ -124,9 +124,7 @@ public class FacilityRentals {
             return;
         }
 
-        boolean wasRentConfirmed = false;
         boolean wasConfirmedOverall = false;
-        ContractStartRentalDialog offerDialog;
         while (!wasConfirmedOverall) {
             new ContractStartRentalDialog(campaign, contract, hospitalCost, kitchenCost, holdingCellCost);
 
@@ -330,7 +328,7 @@ public class FacilityRentals {
 
         List<Mission> activeMissions = campaign.getActiveMissions(false);
         Money totalAvailableFunds = finances.getBalance();
-        Collection<Unit> units = campaign.getHangar().getUnits();
+        Collection<Unit> units = campaign.getAllHangar().getUnits();
 
         Money totalCharge = Money.zero();
 
@@ -364,11 +362,7 @@ public class FacilityRentals {
      * @since 0.50.10
      */
     public static boolean shouldBeIgnoredByBayRentals(Unit unit) {
-        if (unit.isMothballed()) {
-            return true;
-        }
-
-        return false;
+        return unit.isMothballed();
     }
 
     /**
@@ -461,18 +455,21 @@ public class FacilityRentals {
     }
 
     /**
-     * Processes a request to change bay assignments for the specified units, offering bay rental opportunities
-     * if allowed by the current campaign state.
+     * Processes a request to change bay assignments for the specified units, offering bay rental opportunities if
+     * allowed by the current campaign state.
      * <p>
-     * Bay rentals are only permitted if the campaign is either off-contract or on a garrison-type contract,
-     * and the campaign's location is planetside. If these conditions are not met, a dialog is shown to the user
-     * indicating that no facilities are available.
+     * Bay rentals are only permitted if the campaign is either off-contract or on a garrison-type contract, and the
+     * campaign's location is planetside. If these conditions are not met, a dialog is shown to the user indicating that
+     * no facilities are available.
      * </p>
      *
      * @param campaign      the current campaign context
      * @param selectedUnits the units for which bay changes are requested
-     * @param bayType       the type of bay being requested (e.g., {@link Unit#SITE_FACILITY_MAINTENANCE}, {@link Unit#SITE_FACTORY_CONDITIONS})
-     * @return {@code true} if the bay change process can proceed; {@code false} if not allowed (e.g., due to contract or location restrictions)
+     * @param bayType       the type of bay being requested (e.g., {@link Unit#SITE_FACILITY_MAINTENANCE},
+     *                      {@link Unit#SITE_FACTORY_CONDITIONS})
+     *
+     * @return {@code true} if the bay change process can proceed; {@code false} if not allowed (e.g., due to contract
+     *       or location restrictions)
      */
     public static boolean processBayChangeRequest(Campaign campaign, Unit[] selectedUnits, int bayType) {
         List<AtBContract> activeAtBContracts = campaign.getActiveAtBContracts();
@@ -485,7 +482,7 @@ public class FacilityRentals {
             }
         }
 
-        if (!isBayRentalAllowed || !campaign.getLocation().isOnPlanet()) {
+        if (!isBayRentalAllowed || !campaign.getCurrentLocation().isOnPlanet()) {
             BayRentalDialog.showNoFacilitiesAvailableDialog(campaign);
             return false;
         }

@@ -65,6 +65,7 @@ import mekhq.MHQStaticDirectoryManager;
 import mekhq.MekHQ;
 import mekhq.Utilities;
 import mekhq.campaign.Campaign;
+import mekhq.campaign.campaignOptions.CampaignOptions;
 import mekhq.campaign.finances.Loan;
 import mekhq.campaign.finances.Money;
 import mekhq.campaign.finances.enums.FinancialTerm;
@@ -231,7 +232,7 @@ public abstract class AbstractCompanyGenerator {
     private int determineNumberOfCaptains() {
         return getOptions().isGenerateCaptains()
                      ? Math.max((getOptions().getCompanyCount()
-                                       - (getOptions().isGenerateMercenaryCompanyCommandLance() ? 0 : 1)), 0)
+                                 - (getOptions().isGenerateMercenaryCompanyCommandLance() ? 0 : 1)), 0)
                      : 0;
     }
     // endregion Determination Methods
@@ -321,7 +322,7 @@ public abstract class AbstractCompanyGenerator {
                                      .min(personnelSorter)
                                      .orElse(new CompanyGenerationPersonTracker(
                                            campaign.newPerson(PersonnelRole.MEKWARRIOR, getPersonnelGenerator()))));
-            initialTrackers.remove(sortedTrackers.get(0));
+            initialTrackers.remove(sortedTrackers.getFirst());
         }
 
         // Second, Assign the Officers
@@ -392,7 +393,7 @@ public abstract class AbstractCompanyGenerator {
         sortedTrackers.addAll(initialTrackers);
 
         // Then generate the individuals based on their sorted trackers
-        generateCommandingOfficer(campaign, sortedTrackers.get(0), numMekWarriors);
+        generateCommandingOfficer(campaign, sortedTrackers.getFirst(), numMekWarriors);
         generateOfficers(sortedTrackers);
         generateStandardMekWarriors(campaign, sortedTrackers);
 
@@ -703,11 +704,25 @@ public abstract class AbstractCompanyGenerator {
 
                 for (final CompanyGenerationPersonTracker tracker : trackers) {
                     if (getOptions().isSimulateRandomMarriages()) {
-                        campaign.getMarriage().processNewWeek(campaign, date, tracker.getPerson(), true);
+                        campaign.getMarriage().processNewWeek(campaign, date, tracker.getPerson());
                     }
 
                     if (getOptions().isSimulateRandomProcreation()) {
                         campaign.getProcreation().processNewWeek(campaign, date, tracker.getPerson());
+                    }
+                }
+            }
+            //remove any post-partum injuries/hits that may have been applied due to giving birth
+            for (final CompanyGenerationPersonTracker tracker : trackers) {
+                CampaignOptions campaignOptions = campaign.getCampaignOptions();
+                Person person = tracker.getPerson();
+                if (person.needsFixing()) {
+                    if (campaignOptions.isUseAdvancedMedical()) {
+                        person.clearInjuriesExcludingProsthetics(campaign.getLocalDate());
+                    } else {
+                        while (person.needsFixing()) {
+                            person.heal();
+                        }
                     }
                 }
             }
@@ -909,29 +924,29 @@ public abstract class AbstractCompanyGenerator {
                                                                                .collect(Collectors.toList());
 
         // Sort Command Lance
-        organizeTrackersIntoLance(sortedTrackers, trackers.get(0), standardMekWarriors);
+        organizeTrackersIntoLance(sortedTrackers, trackers.getFirst(), standardMekWarriors);
 
         // If the command lance is part of a company, we sort the rest of that company
         // immediately
         if (!getOptions().isGenerateMercenaryCompanyCommandLance() && (getOptions().getCompanyCount() > 0)) {
             for (int i = 1; i < getOptions().getLancesPerCompany(); i++) {
-                organizeTrackersIntoLance(sortedTrackers, lieutenants.remove(0), standardMekWarriors);
+                organizeTrackersIntoLance(sortedTrackers, lieutenants.removeFirst(), standardMekWarriors);
             }
         }
 
         // Sort into Companies
         while (!captains.isEmpty()) {
             // Assign the Captain's Lance
-            organizeTrackersIntoLance(sortedTrackers, captains.remove(0), standardMekWarriors);
+            organizeTrackersIntoLance(sortedTrackers, captains.removeFirst(), standardMekWarriors);
             // Then assign the other lances
             for (int y = 1; y < getOptions().getLancesPerCompany(); y++) {
-                organizeTrackersIntoLance(sortedTrackers, lieutenants.remove(0), standardMekWarriors);
+                organizeTrackersIntoLance(sortedTrackers, lieutenants.removeFirst(), standardMekWarriors);
             }
         }
 
         // Sort any individual lances
         while (!lieutenants.isEmpty()) {
-            organizeTrackersIntoLance(sortedTrackers, lieutenants.remove(0), standardMekWarriors);
+            organizeTrackersIntoLance(sortedTrackers, lieutenants.removeFirst(), standardMekWarriors);
         }
 
         return sortedTrackers;
@@ -951,7 +966,7 @@ public abstract class AbstractCompanyGenerator {
             standardMekWarriors.clear();
         } else {
             for (int i = 1; (i < getOptions().getLanceSize()) && !standardMekWarriors.isEmpty(); i++) {
-                sortedTrackers.add(standardMekWarriors.remove(0));
+                sortedTrackers.add(standardMekWarriors.removeFirst());
             }
         }
     }
@@ -1143,8 +1158,8 @@ public abstract class AbstractCompanyGenerator {
         final Formation originFormation = campaign.getFormation(0);
         final Alphabet[] alphabet = Alphabet.values();
         final Faction formationIconFaction = getOptions().isUseSpecifiedFactionToGenerateFormationIcons()
-                                               ? getOptions().getSpecifiedFaction()
-                                               : campaign.getFaction();
+                                                   ? getOptions().getSpecifiedFaction()
+                                                   : campaign.getFaction();
         FormationPieceIcon background = null;
 
         if (getOptions().isGenerateFormationIcons()) {
@@ -1184,7 +1199,8 @@ public abstract class AbstractCompanyGenerator {
 
                 // Background
                 if (background != null) {
-                    layeredFormationIcon.getPieces().putIfAbsent(LayeredFormationIconLayer.BACKGROUND, new ArrayList<>());
+                    layeredFormationIcon.getPieces()
+                          .putIfAbsent(LayeredFormationIconLayer.BACKGROUND, new ArrayList<>());
                     layeredFormationIcon.getPieces().get(LayeredFormationIconLayer.BACKGROUND).add(background.clone());
                 }
 
@@ -1210,7 +1226,8 @@ public abstract class AbstractCompanyGenerator {
         // Create Companies
         for (int i = 0; i < getOptions().getCompanyCount(); i++) {
             final Formation company = new Formation(getOptions().getForceNamingMethod().getValue(alphabet[i])
-                                                  + resources.getString("AbstractCompanyGenerator.Company.text"));
+                                                          +
+                                                          resources.getString("AbstractCompanyGenerator.Company.text"));
             campaign.addFormation(company, originFormation);
             for (int y = 0; y < getOptions().getLancesPerCompany(); y++) {
                 createLance(campaign, formationIconFaction, company, trackers, alphabet[y], background);
@@ -1223,7 +1240,11 @@ public abstract class AbstractCompanyGenerator {
 
         // Create Individual Lances
         for (int i = 0; i < getOptions().getIndividualLanceCount(); i++) {
-            createLance(campaign, formationIconFaction, originFormation, trackers, alphabet[i + getOptions().getCompanyCount()],
+            createLance(campaign,
+                  formationIconFaction,
+                  originFormation,
+                  trackers,
+                  alphabet[i + getOptions().getCompanyCount()],
                   background);
         }
     }
@@ -1231,16 +1252,16 @@ public abstract class AbstractCompanyGenerator {
     /**
      * This creates a lance with a standard name
      *
-     * @param campaign         the campaign to generate the unit within
+     * @param campaign             the campaign to generate the unit within
      * @param formationIconFaction the faction to create a layered formation icon for
-     * @param head             the force to append the new lance to
-     * @param trackers         the list of trackers, properly ordered to be assigned to the lance
-     * @param alphabet         the alphabet value to determine the lance name from
-     * @param background       the background force piece icon, which is null when there's no valid background
+     * @param head                 the force to append the new lance to
+     * @param trackers             the list of trackers, properly ordered to be assigned to the lance
+     * @param alphabet             the alphabet value to determine the lance name from
+     * @param background           the background force piece icon, which is null when there's no valid background
      */
     private void createLance(final Campaign campaign, final Faction formationIconFaction,
-                             final Formation head, final List<CompanyGenerationPersonTracker> trackers,
-                             final Alphabet alphabet, final @Nullable FormationPieceIcon background) {
+          final Formation head, final List<CompanyGenerationPersonTracker> trackers,
+          final Alphabet alphabet, final @Nullable FormationPieceIcon background) {
         createLance(campaign, formationIconFaction, head, trackers,
               getOptions().getForceNamingMethod().getValue(alphabet)
                     + resources.getString("AbstractCompanyGenerator.Lance.text"),
@@ -1248,22 +1269,22 @@ public abstract class AbstractCompanyGenerator {
     }
 
     /**
-     * @param campaign         the campaign to generate the unit within
+     * @param campaign             the campaign to generate the unit within
      * @param formationIconFaction the faction to create a layered formation icon for
-     * @param head             the force to append the new lance to
-     * @param trackers         the list of trackers, properly ordered to be assigned to the lance
-     * @param name             the lance's name
-     * @param background       the background force piece icon, which is null when there's no valid background
+     * @param head                 the force to append the new lance to
+     * @param trackers             the list of trackers, properly ordered to be assigned to the lance
+     * @param name                 the lance's name
+     * @param background           the background force piece icon, which is null when there's no valid background
      *
      * @return the newly created lance
      */
     private Formation createLance(final Campaign campaign, final Faction formationIconFaction,
-                                  final Formation head, final List<CompanyGenerationPersonTracker> trackers,
-                                  final String name, final @Nullable FormationPieceIcon background) {
+          final Formation head, final List<CompanyGenerationPersonTracker> trackers,
+          final String name, final @Nullable FormationPieceIcon background) {
         final Formation lance = new Formation(name);
         campaign.addFormation(lance, head);
         for (int i = 0; (i < getOptions().getLanceSize()) && !trackers.isEmpty(); i++) {
-            campaign.addUnitToFormation(trackers.remove(0).getPerson().getUnit(), lance);
+            campaign.addUnitToFormation(trackers.removeFirst().getPerson().getUnit(), lance);
         }
 
         if (getOptions().isGenerateFormationIcons()) {
@@ -1276,15 +1297,15 @@ public abstract class AbstractCompanyGenerator {
     /**
      * This creates a layered formation icon for a force
      *
-     * @param campaign         the campaign the force is a part of
+     * @param campaign             the campaign the force is a part of
      * @param formationIconFaction the faction to create a layered formation icon for
      * @param formation            the force to create a layered formation icon for
-     * @param isLance          whether the force is a lance or a company
-     * @param background       the background force piece icon, which is null when there's no valid background
+     * @param isLance              whether the force is a lance or a company
+     * @param background           the background force piece icon, which is null when there's no valid background
      */
     private void createLayeredFormationIcon(final Campaign campaign, final Faction formationIconFaction,
-                                        final Formation formation, final boolean isLance,
-                                        final @Nullable FormationPieceIcon background) {
+          final Formation formation, final boolean isLance,
+          final @Nullable FormationPieceIcon background) {
         if (MHQStaticDirectoryManager.getFormationIcons() == null) {
             return;
         }
@@ -1352,9 +1373,9 @@ public abstract class AbstractCompanyGenerator {
     /**
      * This determines the weight class of a force (lance or company) based on the units within
      *
-     * @param campaign the campaign to determine based on
-     * @param formation    the force to determine the weight class for
-     * @param isLance  whether the force is a lance or a company
+     * @param campaign  the campaign to determine based on
+     * @param formation the force to determine the weight class for
+     * @param isLance   whether the force is a lance or a company
      *
      * @return the weight class of the force
      */
@@ -1594,7 +1615,7 @@ public abstract class AbstractCompanyGenerator {
         }
 
         if (getOptions().isStartCourseToContractPlanet()) {
-            campaign.getLocation().setJumpPath(contract.getJumpPath(campaign));
+            campaign.getCurrentLocation().setJumpPath(contract.getJumpPath(campaign));
         }
     }
     // endregion Contract
@@ -1626,11 +1647,6 @@ public abstract class AbstractCompanyGenerator {
         Money startingCash = generateStartingCash();
         Money minimumStartingFloat = Money.of(getOptions().getMinimumStartingFloat());
         Money loan = Money.zero();
-
-        // Process Initial Contract Payment
-        if (getOptions().isIncludeInitialContractPayment() && (contract != null)) {
-            startingCash = startingCash.plus(contract.getTotalAdvanceAmount());
-        }
 
         if (getOptions().isPayForSetup()) {
             // Calculate the total costs of setup

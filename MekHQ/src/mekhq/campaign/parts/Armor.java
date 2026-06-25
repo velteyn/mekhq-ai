@@ -94,10 +94,14 @@ public class Armor extends Part implements IAcquisitionWork {
         this.location = loc;
         this.rear = r;
         this.clan = clan;
-        this.name = "Armor";
+    }
+
+    @Override
+    public String getName() {
         if (type > -1) {
-            this.name += " (" + (clan ? "Clan " : "IS ") + ArmorType.of(type, clan).getName() + ')';
+            return "Armor (" + (clan ? "Clan " : "IS ") + ArmorType.of(type, clan).getName() + ')';
         }
+        return "Armor";
     }
 
     @Override
@@ -212,7 +216,7 @@ public class Armor extends Part implements IAcquisitionWork {
                 }
             }
 
-            PartInventory inventories = campaign.getPartInventory(getNewPart());
+            PartInventory inventories = getPartInventory(getNewPart());
             String orderTransitString = inventories.getTransitOrderedDetails();
             if (!orderTransitString.isEmpty()) {
                 toReturn.append(spanOpeningWithCustomColor(getWarningColor()))
@@ -430,16 +434,12 @@ public class Armor extends Part implements IAcquisitionWork {
         // Options include: Waiting for Java to support that, or changing the entire
         // way the 'ETYPE' works on Entity to implement bitset or some similar.
         // For repair types, see CamOps, Master Repair Table, p207
-        String typeKey;
-        if (entity instanceof Tank) {
-            typeKey = "TANK";
-        } else if (entity instanceof Warship) {
-            typeKey = "CAPITAL";
-        } else if (entity instanceof Aero) {
-            typeKey = "AEROSPACE";
-        } else {
-            typeKey = "DEFAULT";
-        }
+        String typeKey = switch (entity) {
+            case Tank ignored -> "TANK";
+            case Warship ignored -> "CAPITAL";
+            case Aero ignored -> "AEROSPACE";
+            default -> "DEFAULT";
+        };
 
         return (switch (typeKey) {
             case "TANK" -> 3;
@@ -531,7 +531,7 @@ public class Armor extends Part implements IAcquisitionWork {
         toReturn += ">";
         toReturn += "<b>" + getAcquisitionDisplayName() + "</b> " + getAcquisitionBonus() + "<br/>";
         toReturn += getAcquisitionExtraDesc() + "<br/>";
-        PartInventory inventories = campaign.getPartInventory(getAcquisitionPart());
+        PartInventory inventories = getPartInventory(getAcquisitionPart());
         toReturn += inventories.getTransitOrderedDetails() + "<br/>";
         toReturn += adjustCostsForCampaignOptions(getStickerPrice()).toAmountAndSymbolString() + "<br/>";
         toReturn += "</font></html>";
@@ -620,7 +620,7 @@ public class Armor extends Part implements IAcquisitionWork {
      * @return returns points of armor are found
      */
     public int getAmountAvailable() {
-        return campaign.getWarehouse()
+        return getWarehouse()
                      .streamSpareParts()
                      .filter(this::isSameArmorPart)
                      .mapToInt(part -> ((Armor) part).getAmount())
@@ -742,10 +742,6 @@ public class Armor extends Part implements IAcquisitionWork {
     public void changeType(int ty, boolean cl) {
         this.type = ty;
         this.clan = cl;
-        this.name = "Armor";
-        if (type > -1) {
-            this.name += " (" + ArmorType.of(type, clan).getName() + ')';
-        }
     }
 
     @Override
@@ -771,7 +767,7 @@ public class Armor extends Part implements IAcquisitionWork {
      * @return leftover amount; should be 0 except when removing if the part removed didn't have enough
      */
     protected int changeAmountAvailableSingle(int amount) {
-        Armor armor = (Armor) campaign.getWarehouse()
+        Armor armor = (Armor) getWarehouse()
                                     .findSparePart(part -> (part instanceof Armor) &&
                                                                  part.isPresent() &&
                                                                  Objects.equals(getRefitUnit(), part.getRefitUnit()) &&
@@ -781,7 +777,7 @@ public class Armor extends Part implements IAcquisitionWork {
             int amountRemaining = armor.getAmount() + amount;
             armor.setAmount(amountRemaining);
             if (armor.getAmount() <= 0) {
-                campaign.getWarehouse().removePart(armor);
+                getWarehouse().removePart(armor);
                 return Math.min(0, amountRemaining);
             }
         } else if (amount > 0) {

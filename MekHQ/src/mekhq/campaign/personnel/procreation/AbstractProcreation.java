@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021-2025 The MegaMek Team. All Rights Reserved.
+ * Copyright (C) 2021-2026 The MegaMek Team. All Rights Reserved.
  *
  * This file is part of MekHQ.
  *
@@ -52,10 +52,10 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
-import megamek.codeUtilities.MathUtility;
 import megamek.common.annotations.Nullable;
 import megamek.common.compute.Compute;
 import megamek.common.enums.Gender;
+import megamek.common.icons.Portrait;
 import megamek.common.options.IOption;
 import mekhq.MHQConstants;
 import mekhq.campaign.Campaign;
@@ -192,7 +192,7 @@ public abstract class AbstractProcreation {
         final double gaussian = Math.sqrt(-2.0 * Math.log(Math.random())) * Math.cos(2.0 * Math.PI * Math.random());
         // To not get unusual results, we limit the variance to +/- 4.0 (almost 6 weeks).
         // A base length of 268 creates a solid enough duration for now.
-        return 268 + (int) Math.round(MathUtility.clamp(gaussian, -4d, 4d) * 10.0);
+        return 268 + (int) Math.round(Math.clamp(gaussian, -4d, 4d) * 10.0);
     }
 
     /**
@@ -220,7 +220,7 @@ public abstract class AbstractProcreation {
                      mother.getGenealogy().getSpouse() :
                      ((mother.getExtraData().get(PREGNANCY_FATHER_DATA) != null) ?
                             campaign.getPerson(UUID.fromString(mother.getExtraData().get(PREGNANCY_FATHER_DATA))) :
-                            null);
+                      null);
     }
     //endregion Determination Methods
 
@@ -234,12 +234,12 @@ public abstract class AbstractProcreation {
      * @return null if they can, otherwise the reason why they cannot
      */
     public @Nullable String canProcreate(final LocalDate today, final Person person, final boolean randomProcreation) {
-        if (person.getGender().isMale()) {
-            return getFormattedTextAt(RESOURCE_BUNDLE, "cannotProcreate.Gender.text");
-        }
-
-        if (!person.isTryingToConceive()) {
-            return getFormattedTextAt(RESOURCE_BUNDLE, "cannotProcreate.NotTryingForABaby.text");
+        if (!person.isWantsChildren()) {
+            if (person.getGender().isMale()) {
+                return getFormattedTextAt(RESOURCE_BUNDLE, "cannotProcreate.DoesNotWantChildren.text");
+            } else {
+                return getFormattedTextAt(RESOURCE_BUNDLE, "cannotProcreate.NotTryingForABaby.text");
+            }
         }
 
         if (person.isPregnant()) {
@@ -289,7 +289,7 @@ public abstract class AbstractProcreation {
                     return getFormattedTextAt(RESOURCE_BUNDLE, "cannotProcreate.FemaleSpouse.text");
                 }
 
-                if (!person.getGenealogy().getSpouse().isTryingToConceive()) {
+                if (!person.getGenealogy().getSpouse().isWantsChildren()) {
                     return getFormattedTextAt(RESOURCE_BUNDLE, "cannotProcreate.SpouseNotTryingForABaby.text");
                 }
 
@@ -433,7 +433,7 @@ public abstract class AbstractProcreation {
             // Create a baby
             final Person baby = campaign.newDependent(Gender.RANDOMIZE,
                   mother.getOriginFaction(),
-                  campaign.getLocation().getPlanet());
+                  campaign.getCurrentLocation().getPlanet());
             baby.setSurname(campaignOptions.getBabySurnameStyle()
                                   .generateBabySurname(mother, father, baby.getGender()));
 
@@ -445,6 +445,11 @@ public abstract class AbstractProcreation {
             baby.setOptions(new PersonnelOptions()); // Stop babies being born with SPAs
             baby.setPreNominal(""); // Stop babies being born with doctorates
             baby.setPostNominal(""); // Stop babies being born with post-nominal titles
+
+            if (campaign.getCampaignOptions().isNoRandomPortraitsForChildren() &&
+                      baby.isChild(campaign.getLocalDate(), false)) {
+                baby.setPortrait(new Portrait());
+            }
 
             baby.setBloodGroup(getInheritedBloodGroup(mother.getBloodGroup(),
                   father == null ? getRandomBloodGroup() : father.getBloodGroup()));
@@ -479,21 +484,23 @@ public abstract class AbstractProcreation {
                 baby.changeStatus(campaign, today, PersonnelStatus.ON_LEAVE);
             }
 
-            // Apply postpartum effects
-            if (campaignOptions.isUseAdvancedMedical()) {
-                Injury injury;
-                if (campaignOptions.isUseAlternativeAdvancedMedical() &&
-                          // These injury types don't stack
-                          !AdvancedMedicalAlternate.hasInjuryOfType(mother.getInjuries(),
-                                AlternateInjuries.POSTPARTUM_RECOVERY)) {
-                    injury = AlternateInjuries.POSTPARTUM_RECOVERY.newInjury(campaign, mother, GENERIC, 1);
+            // Apply postpartum effects (first baby only)
+            if (i == 0) {
+                if (campaignOptions.isUseAdvancedMedical()) {
+                    Injury injury;
+                    if (campaignOptions.isUseAlternativeAdvancedMedical() &&
+                              // These injury types don't stack
+                              !AdvancedMedicalAlternate.hasInjuryOfType(mother.getInjuries(),
+                                    AlternateInjuries.POSTPARTUM_RECOVERY)) {
+                        injury = AlternateInjuries.POSTPARTUM_RECOVERY.newInjury(campaign, mother, GENERIC, 1);
+                    } else {
+                        injury = InjuryTypes.POSTPARTUM_RECOVERY.newInjury(campaign, mother, INTERNAL, 1);
+                    }
+                    mother.addInjury(injury);
                 } else {
-                    injury = InjuryTypes.POSTPARTUM_RECOVERY.newInjury(campaign, mother, INTERNAL, 1);
+                    int currentHits = mother.getHits();
+                    mother.setHits(currentHits + 1);
                 }
-                mother.addInjury(injury);
-            } else {
-                int currentHits = mother.getHits();
-                mother.setHits(currentHits + 1);
             }
 
             // Check for hereditary diseases
@@ -511,8 +518,8 @@ public abstract class AbstractProcreation {
                 baby.getOptions().getOption(UNOFFICIAL_DOBROWSKI_SYNDROME).setValue(true);
             }
 
-            // Alert the player
-            if (campaignOptions.isShowLifeEventDialogBirths()) {
+            // Alert the player, but only show this dialog for the first child with twins/triplets/etc
+            if (campaignOptions.isShowLifeEventDialogBirths() && (i == 0)) {
                 new BirthAnnouncement(campaign, mother, baby.getGender(), size);
             }
         }
@@ -526,7 +533,7 @@ public abstract class AbstractProcreation {
 
         // check desire for children
         if (Compute.d6(1) <= 2) {
-            mother.setTryingToConceive(false);
+            mother.setWantsChildren(false);
         }
 
         // Cleanup Data
@@ -605,6 +612,11 @@ public abstract class AbstractProcreation {
             baby.removeAllSkills(); // Limit skills by age for children and adolescents
             baby.setPrimaryRole(campaign, PersonnelRole.DEPENDENT); // Babies can't have jobs
 
+            if (campaign.getCampaignOptions().isNoRandomPortraitsForChildren() &&
+                      baby.isChild(campaign.getLocalDate(), false)) {
+                baby.setPortrait(new Portrait());
+            }
+
             // re-roll SPAs to include in any age and skill adjustments
             Enumeration<IOption> options = new PersonnelOptions().getOptions(PersonnelOptions.LVL3_ADVANTAGES);
 
@@ -625,7 +637,7 @@ public abstract class AbstractProcreation {
         }
 
         if (Compute.d6(1) <= 2) {
-            mother.setTryingToConceive(false);
+            mother.setWantsChildren(false);
         }
 
         // Cleanup Data
@@ -710,8 +722,11 @@ public abstract class AbstractProcreation {
                 return;
             }
 
-            if (campaign.getCampaignOptions().isUseMaternityLeave()) {
-                if (!person.isBusy() && (person.getDueDate().minusWeeks(20).isBefore(today))) {
+            if (campaign.getCampaignOptions().isUseMaternityLeave() && !person.isBlockMaternityLeave()) {
+                if (!person.isBusy()
+                          && !person.getStatus().isCampFollower()
+                          && person.getNonPermanentInjurySeverity() == 0
+                          && (person.getDueDate().minusWeeks(20).isBefore(today))) {
                     person.changeStatus(campaign, today, PersonnelStatus.ON_MATERNITY_LEAVE);
                 }
             }

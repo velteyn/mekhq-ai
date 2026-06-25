@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019-2025 The MegaMek Team. All Rights Reserved.
+ * Copyright (C) 2019-2026 The MegaMek Team. All Rights Reserved.
  *
  * This file is part of MekHQ.
  *
@@ -63,8 +63,8 @@ public class LFBattery extends Part {
     // Not specified in IO - use SO p158
     public static final TechAdvancement TA_LF_BATTERY = new TechAdvancement(TechBase.ALL)
                                                               .setAdvancement(2519, 2529, 2600)
-                                                              .setPrototypeFactions(Faction.TH)
-                                                              .setProductionFactions(Faction.TH)
+                                                              .setPrototypeFactions(Faction.TH, Faction.CS)
+                                                              .setProductionFactions(Faction.TH, Faction.CS)
                                                               .setTechRating(TechRating.D)
                                                               .setAvailability(AvailabilityValue.E,
                                                                     AvailabilityValue.F,
@@ -86,6 +86,7 @@ public class LFBattery extends Part {
         return docks;
     }
 
+    @Deprecated(since = "0.51.0", forRemoval = true)
     public LFBattery() {
         this(0, Jumpship.DRIVE_CORE_STANDARD, 0, null);
     }
@@ -179,7 +180,7 @@ public class LFBattery extends Part {
             // you can't salvage and keep this in the warehouse, just remove/scrap and
             // replace it
             // See SO p130 for reference
-            campaign.getWarehouse().removePart(this);
+            getWarehouse().removePart(this);
             unit.removePart(this);
             Part missing = getMissingPart();
             unit.addPart(missing);

@@ -274,7 +274,7 @@ public class PrisonerEventManager {
     List<Boolean> checkForPrisonerEvents(boolean isHeadless, int totalPrisoners, int prisonerCapacityUsage,
           int prisonerCapacity) {
         // Calculate overflow as the percentage over prisonerCapacity
-        double overflowPercentage = ((double) (prisonerCapacityUsage - prisonerCapacity) / prisonerCapacity) * 100;
+        double overflowPercentage = ((double) (prisonerCapacityUsage - prisonerCapacity) / prisonerCapacity);
 
         // If no overflow and total prisoners are below the minimum count, no risk of event
         if (overflowPercentage <= 0 && totalPrisoners < MINIMUM_PRISONER_COUNT) {
@@ -349,7 +349,7 @@ public class PrisonerEventManager {
                 List<AtBContract> contracts = campaign.getActiveAtBContracts();
                 Collections.shuffle(contracts);
 
-                new PrisonEscapeScenario(campaign, contracts.get(0), escapees);
+                new PrisonEscapeScenario(campaign, contracts.getFirst(), escapees);
             }
         }
     }
@@ -705,8 +705,8 @@ public class PrisonerEventManager {
                                           CLOSING_SPAN_TAG);
 
         // Add the report
-        campaign.addReport(GENERAL, getFormattedTextAt(RESOURCE_BUNDLE, key), messageColor, CLOSING_SPAN_TAG,
-              crimeMessage);
+        campaign.addReport(GENERAL, getFormattedTextAt(RESOURCE_BUNDLE, key, messageColor, CLOSING_SPAN_TAG,
+              crimeMessage));
     }
 
     /**
@@ -783,9 +783,14 @@ public class PrisonerEventManager {
                             prisonerCapacity += isMekHQCaptureStyle ?
                                                       PRISONER_CAPACITY_BATTLE_ARMOR :
                                                       PRISONER_CAPACITY_BATTLE_ARMOR *
-                                                            PRISONER_CAPACITY_CAM_OPS_MULTIPLIER;
+                                                      PRISONER_CAPACITY_CAM_OPS_MULTIPLIER;
                         }
                     }
+
+                    prisonerCapacity += unit.getTotalTempCrew() * (isMekHQCaptureStyle ?
+                                              PRISONER_CAPACITY_BATTLE_ARMOR :
+                                              PRISONER_CAPACITY_BATTLE_ARMOR *
+                                              PRISONER_CAPACITY_CAM_OPS_MULTIPLIER);
 
                     continue;
                 }
@@ -796,9 +801,15 @@ public class PrisonerEventManager {
                             prisonerCapacity += isMekHQCaptureStyle ?
                                                       PRISONER_CAPACITY_CONVENTIONAL_INFANTRY :
                                                       PRISONER_CAPACITY_CONVENTIONAL_INFANTRY *
-                                                            PRISONER_CAPACITY_CAM_OPS_MULTIPLIER;
+                                                      PRISONER_CAPACITY_CAM_OPS_MULTIPLIER;
                         }
                     }
+
+                    prisonerCapacity += unit.getTotalTempCrew() * (isMekHQCaptureStyle ?
+                                              PRISONER_CAPACITY_CONVENTIONAL_INFANTRY :
+                                              PRISONER_CAPACITY_CONVENTIONAL_INFANTRY *
+                                              PRISONER_CAPACITY_CAM_OPS_MULTIPLIER);
+
                     continue;
                 }
 
@@ -861,7 +872,7 @@ public class PrisonerEventManager {
 
         if (!securityFormations.isEmpty()) {
             Collections.shuffle(securityFormations);
-            Formation designatedFormation = securityFormations.get(0);
+            Formation designatedFormation = securityFormations.getFirst();
             UUID speakerId = designatedFormation.getFormationCommanderID();
             if (speakerId != null) {
                 speaker = campaign.getPerson(speakerId);

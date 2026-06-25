@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019-2025 The MegaMek Team. All Rights Reserved.
+ * Copyright (C) 2019-2026 The MegaMek Team. All Rights Reserved.
  *
  * This file is part of MekHQ.
  *
@@ -63,8 +63,8 @@ public class JumpshipDockingCollar extends Part {
 
     public static final TechAdvancement TA_BOOM = new TechAdvancement(TechBase.ALL)
                                                         .setAdvancement(2458, 2470, 2500)
-                                                        .setPrototypeFactions(Faction.TH)
-                                                        .setProductionFactions(Faction.TH)
+                                                        .setPrototypeFactions(Faction.TH, Faction.CS)
+                                                        .setProductionFactions(Faction.TH, Faction.CS)
                                                         .setTechRating(TechRating.C)
                                                         .setAvailability(AvailabilityValue.C,
                                                               AvailabilityValue.C,
@@ -74,7 +74,7 @@ public class JumpshipDockingCollar extends Part {
     public static final TechAdvancement TA_NO_BOOM = new TechAdvancement(TechBase.ALL)
                                                            .setAdvancement(2304, 2350, 2364, 2520)
                                                            .setPrototypeFactions(Faction.TA)
-                                                           .setProductionFactions(Faction.TH)
+                                                           .setProductionFactions(Faction.TH, Faction.CS)
                                                            .setTechRating(TechRating.B)
                                                            .setAvailability(AvailabilityValue.C,
                                                                  AvailabilityValue.X,
@@ -85,6 +85,7 @@ public class JumpshipDockingCollar extends Part {
     private int collarType;
     private int collarNumber;
 
+    @Deprecated(since = "0.51.0", forRemoval = true)
     public JumpshipDockingCollar() {
         this(0, 0, null, Jumpship.COLLAR_STANDARD);
     }
@@ -176,12 +177,12 @@ public class JumpshipDockingCollar extends Part {
             if (collar != null) {
                 collar.setDamaged(true);
             }
-            Part spare = campaign.getWarehouse().checkForExistingSparePart(this);
+            Part spare = getWarehouse().checkForExistingSparePart(this);
             if (!salvage) {
-                campaign.getWarehouse().removePart(this);
+                getWarehouse().removePart(this);
             } else if (null != spare) {
                 spare.changeQuantity(1);
-                campaign.getWarehouse().removePart(this);
+                getWarehouse().removePart(this);
             }
             unit.removePart(this);
             Part missing = getMissingPart();

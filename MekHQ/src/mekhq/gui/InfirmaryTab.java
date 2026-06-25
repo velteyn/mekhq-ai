@@ -32,6 +32,9 @@
  */
 package mekhq.gui;
 
+import static mekhq.campaign.enums.DailyReportType.MEDICAL;
+import static mekhq.utilities.MHQInternationalization.getFormattedText;
+
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Graphics;
@@ -58,6 +61,7 @@ import javax.swing.SwingUtilities;
 
 import megamek.client.ui.util.UIUtil;
 import megamek.common.event.Subscribe;
+import megamek.common.ui.FastJScrollPane;
 import mekhq.MekHQ;
 import mekhq.campaign.OptimizeInfirmaryAssignments;
 import mekhq.campaign.campaignOptions.CampaignOptions;
@@ -76,7 +80,6 @@ import mekhq.gui.model.DocTableModel;
 import mekhq.gui.model.PatientTableModel;
 import mekhq.gui.panels.TutorialHyperlinkPanel;
 import mekhq.gui.sorter.PersonTitleSorter;
-import mekhq.gui.utilities.JScrollPaneWithSpeed;
 
 /**
  * Shows injured and medical personnel
@@ -98,7 +101,6 @@ public final class InfirmaryTab extends CampaignGuiTab {
     //region Constructors
     public InfirmaryTab(CampaignGUI gui, String name) {
         super(gui, name);
-        MekHQ.registerHandler(this);
     }
     //endregion Constructors
 
@@ -125,7 +127,7 @@ public final class InfirmaryTab extends CampaignGuiTab {
         docTable.getColumnModel().getColumn(0).setCellRenderer(doctorsModel.getRenderer());
         docTable.getSelectionModel().addListSelectionListener(ev -> docTableValueChanged());
         docTable.setOpaque(false);
-        JScrollPane scrollDocTable = new JScrollPaneWithSpeed(docTable);
+        JScrollPane scrollDocTable = new FastJScrollPane(docTable);
         scrollDocTable.setBorder(RoundedLineBorder.createRoundedLineBorder());
         scrollDocTable.setMinimumSize(new Dimension(300, 300));
         scrollDocTable.setPreferredSize(new Dimension(300, 300));
@@ -161,7 +163,14 @@ public final class InfirmaryTab extends CampaignGuiTab {
         btnAdvancedSurgery.setEnabled(false);
         btnAdvancedSurgery.addActionListener(ev -> {
             for (Person person : getAllSelectedPatients()) {
-                new AdvancedReplacementLimbDialog(getCampaign(), person, false);
+                if (person.getStatus().isDead()) {
+                    String report = getFormattedText(
+                          "performAdvancedSurgery.report.characterDead",
+                          person.getHyperlinkedFullTitle());
+                    getCampaign().addReport(MEDICAL, report);
+                } else {
+                    new AdvancedReplacementLimbDialog(getCampaign(), getCampaignGui().getIconPackage(), person, false);
+                }
             }
         });
 
@@ -198,8 +207,7 @@ public final class InfirmaryTab extends CampaignGuiTab {
                         Person selectedPatient = listAssignedPatient.getSelectedValue();
                         if (selectedPatient != null) {
                             MedicalViewDialog medicalViewDialog = new MedicalViewDialog(null,
-                                  getCampaign(),
-                                  selectedPatient);
+                                  getCampaign(), selectedPatient, getCampaignGui().getIconPackage());
                             medicalViewDialog.setVisible(true);
                         }
                     }
@@ -222,7 +230,7 @@ public final class InfirmaryTab extends CampaignGuiTab {
             }
         });
 
-        JScrollPane scrollAssignedPatient = new JScrollPaneWithSpeed(listAssignedPatient);
+        JScrollPane scrollAssignedPatient = new FastJScrollPane(listAssignedPatient);
         scrollAssignedPatient.setBorder(null);
         scrollAssignedPatient.setMinimumSize(new Dimension(300, 360));
         scrollAssignedPatient.setPreferredSize(new Dimension(300, 360));
@@ -248,8 +256,7 @@ public final class InfirmaryTab extends CampaignGuiTab {
                         Person selectedPatient = listUnassignedPatient.getSelectedValue();
                         if (selectedPatient != null) {
                             MedicalViewDialog medicalViewDialog = new MedicalViewDialog(null,
-                                  getCampaign(),
-                                  selectedPatient);
+                                  getCampaign(), selectedPatient, getCampaignGui().getIconPackage());
                             medicalViewDialog.setVisible(true);
                         }
                     }
@@ -272,7 +279,7 @@ public final class InfirmaryTab extends CampaignGuiTab {
             }
         });
 
-        JScrollPane scrollUnassignedPatient = new JScrollPaneWithSpeed(listUnassignedPatient);
+        JScrollPane scrollUnassignedPatient = new FastJScrollPane(listUnassignedPatient);
         scrollUnassignedPatient.setBorder(null);
         scrollUnassignedPatient.setMinimumSize(new Dimension(300, 200));
         scrollUnassignedPatient.setPreferredSize(new Dimension(300, 300));
@@ -530,13 +537,14 @@ public final class InfirmaryTab extends CampaignGuiTab {
         Person doctor = getSelectedDoctor();
         ArrayList<Person> assigned = new ArrayList<>();
         ArrayList<Person> unassigned = new ArrayList<>();
-        for (Person patient : getCampaign().getPatients()) {
+        for (Person patient : getCampaign().getPatientsWithNonPermanentInjuries()) {
             // Knock out inactive doctors
             if ((patient.getDoctorId() != null) &&
                       (getCampaign().getPerson(patient.getDoctorId()) != null) &&
                       !getCampaign().getPerson(patient.getDoctorId()).getStatus().isActiveFlexible()) {
                 patient.setDoctorId(null, getCampaign().getCampaignOptions().getNaturalHealingWaitingPeriod());
             }
+
             if (patient.getDoctorId() == null) {
                 unassigned.add(patient);
             } else if ((doctor != null) && patient.getDoctorId().equals(doctor.getId())) {

@@ -119,7 +119,7 @@ public class PersonnelMarketDialog extends JDialog {
           PersonnelTableModelColumn.GENDER,
           PersonnelTableModelColumn.SKILL_LEVEL,
           PersonnelTableModelColumn.PERSONNEL_ROLE,
-          PersonnelTableModelColumn.UNIT_ASSIGNMENT);
+          PersonnelTableModelColumn.MARKET_UNIT_ASSIGNMENT);
 
     private final transient ResourceBundle resourceMap = ResourceBundle.getBundle(
           "mekhq.resources.PersonnelMarketDialog",
@@ -194,7 +194,7 @@ public class PersonnelMarketDialog extends JDialog {
         gridBagConstraints.anchor = GridBagConstraints.WEST;
         panelFilterButtons.add(comboPersonType, gridBagConstraints);
 
-        boolean atbOutOfContract = campaign.getCampaignOptions().isUseAtB() && !campaign.hasActiveContract();
+        boolean atbOutOfContract = campaign.getCampaignOptions().isUseStratCon() && !campaign.hasActiveContract();
         boolean usingCamOpsMarkets = campaign.getCampaignOptions().getPersonnelMarketName().equals("Campaign Ops");
         if (atbOutOfContract && !usingCamOpsMarkets) {
             // Paid recruitment is available
@@ -278,7 +278,7 @@ public class PersonnelMarketDialog extends JDialog {
             tableColumn.setCellRenderer(getRenderer());
             columnModel.setColumnVisible(tableColumn, true);
 
-            final Comparator<?> comparator = column.getComparator(campaign);
+            final Comparator<?> comparator = column.getComparator();
             sorter.setComparator(column.ordinal(), comparator);
             final SortOrder sortOrder = column.getDefaultSortOrder();
             if (sortOrder != null) {

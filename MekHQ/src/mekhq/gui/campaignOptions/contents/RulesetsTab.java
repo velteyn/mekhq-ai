@@ -37,6 +37,7 @@ import static mekhq.gui.campaignOptions.CampaignOptionsUtilities.MILESTONE_BEFOR
 import static mekhq.gui.campaignOptions.CampaignOptionsUtilities.createParentPanel;
 import static mekhq.gui.campaignOptions.CampaignOptionsUtilities.createTipPanelUpdater;
 import static mekhq.gui.campaignOptions.CampaignOptionsUtilities.getImageDirectory;
+import static mekhq.gui.campaignOptions.CampaignOptionsUtilities.getMetadata;
 
 import java.awt.Component;
 import java.awt.GridBagConstraints;
@@ -66,8 +67,6 @@ import mekhq.gui.campaignOptions.components.CampaignOptionsHeaderPanel;
 import mekhq.gui.campaignOptions.components.CampaignOptionsLabel;
 import mekhq.gui.campaignOptions.components.CampaignOptionsSpinner;
 import mekhq.gui.campaignOptions.components.CampaignOptionsStandardPanel;
-
-import static mekhq.gui.campaignOptions.CampaignOptionsUtilities.getMetadata;
 
 /**
  * Represents a tab in the campaign options UI for managing ruleset configurations in campaigns.
@@ -120,9 +119,16 @@ public class RulesetsTab {
     private JCheckBox chkUseAdvancedBuildingGunEmplacements;
     private JLabel lblSPAUpgradeIntensity;
     private JSpinner spnSPAUpgradeIntensity;
+    private JLabel lblReinforcementBaseTargetNumber;
+    private JSpinner spnReinforcementBaseTargetNumber;
     private JCheckBox chkAutoConfigMunitions;
 
     private JPanel pnlScenarioModifiers;
+    private JCheckBox chkClansObeyBiddingRules;
+    private JLabel lblEnemyFacilityModifierDieSize;
+    private JSpinner spnEnemyFacilityModifierDieSize;
+    private JLabel lblAlliedFacilityModifierDieSize;
+    private JSpinner spnAlliedFacilityModifierDieSize;
     private JLabel lblScenarioModMax;
     private JSpinner spnScenarioModMax;
     private JLabel lblScenarioModChance;
@@ -237,9 +243,16 @@ public class RulesetsTab {
 
         lblSPAUpgradeIntensity = new JLabel();
         spnSPAUpgradeIntensity = new JSpinner();
+        lblReinforcementBaseTargetNumber = new JLabel();
+        spnReinforcementBaseTargetNumber = new JSpinner();
         chkAutoConfigMunitions = new JCheckBox();
 
         pnlScenarioModifiers = new JPanel();
+        chkClansObeyBiddingRules = new JCheckBox();
+        lblEnemyFacilityModifierDieSize = new JLabel();
+        spnEnemyFacilityModifierDieSize = new JSpinner();
+        lblAlliedFacilityModifierDieSize = new JLabel();
+        spnAlliedFacilityModifierDieSize = new JSpinner();
         lblScenarioModMax = new JLabel();
         spnScenarioModMax = new JSpinner();
         lblScenarioModChance = new JLabel();
@@ -318,8 +331,14 @@ public class RulesetsTab {
         lblSPAUpgradeIntensity = new CampaignOptionsLabel("SPAUpgradeIntensity");
         spnSPAUpgradeIntensity = new CampaignOptionsSpinner("SPAUpgradeIntensity",
               0, -1, 3, 1);
+        lblReinforcementBaseTargetNumber = new CampaignOptionsLabel("ReinforcementBaseTargetNumber",
+              getMetadata(new Version(0, 51, 0)));
+        spnReinforcementBaseTargetNumber = new CampaignOptionsSpinner("ReinforcementBaseTargetNumber",
+              7, -10, 10, 1);
         chkAutoConfigMunitions = new CampaignOptionsCheckBox("AutoConfigMunitions",
-              getMetadata(LEGACY_RULE_BEFORE_METADATA, CampaignOptionFlag.CUSTOM_SYSTEM, CampaignOptionFlag.DOCUMENTED));
+              getMetadata(LEGACY_RULE_BEFORE_METADATA,
+                    CampaignOptionFlag.CUSTOM_SYSTEM,
+                    CampaignOptionFlag.DOCUMENTED));
 
         // Other
         pnlScenarioModifiers = createUniversalModifiersPanel();
@@ -391,6 +410,12 @@ public class RulesetsTab {
 
         layout.gridy++;
         layout.gridwidth = 1;
+        panel.add(lblReinforcementBaseTargetNumber, layout);
+        layout.gridx++;
+        panel.add(spnReinforcementBaseTargetNumber, layout);
+
+        layout.gridy++;
+        layout.gridwidth = 1;
         panel.add(lblSPAUpgradeIntensity, layout);
         layout.gridx++;
         panel.add(spnSPAUpgradeIntensity, layout);
@@ -432,7 +457,9 @@ public class RulesetsTab {
         // Layout the panel
         final JPanel panel = new CampaignOptionsStandardPanel("AutoResolvePanel", true,
               "AutoResolvePanel",
-              getMetadata(LEGACY_RULE_BEFORE_METADATA, CampaignOptionFlag.CUSTOM_SYSTEM, CampaignOptionFlag.DOCUMENTED));
+              getMetadata(LEGACY_RULE_BEFORE_METADATA,
+                    CampaignOptionFlag.CUSTOM_SYSTEM,
+                    CampaignOptionFlag.DOCUMENTED));
         final GridBagConstraints layout = new CampaignOptionsGridBagConstraints(panel);
 
         layout.gridwidth = 1;
@@ -536,10 +563,17 @@ public class RulesetsTab {
      */
     private JPanel createUniversalModifiersPanel() {
         //Content
-        lblScenarioModMax = new CampaignOptionsLabel("ScenarioModMax");
+        chkClansObeyBiddingRules = new CampaignOptionsCheckBox("ClansObeyBiddingRules");
+        lblEnemyFacilityModifierDieSize = new CampaignOptionsLabel("EnemyFacilityModifierDieSize");
+        spnEnemyFacilityModifierDieSize = new CampaignOptionsSpinner("EnemyFacilityModifierDieSize",
+              2, 0, 10, 1);
+        lblAlliedFacilityModifierDieSize = new CampaignOptionsLabel("AlliedFacilityModifierDieSize");
+        spnAlliedFacilityModifierDieSize = new CampaignOptionsSpinner("AlliedFacilityModifierDieSize",
+              2, 0, 10, 1);
+        lblScenarioModMax = new CampaignOptionsLabel("ScenarioModMax", getMetadata(new Version(0, 51, 0)));
         spnScenarioModMax = new CampaignOptionsSpinner("ScenarioModMax",
               3, 0, 10, 1);
-        lblScenarioModChance = new CampaignOptionsLabel("ScenarioModChance");
+        lblScenarioModChance = new CampaignOptionsLabel("ScenarioModChance", getMetadata(new Version(0, 51, 0)));
         spnScenarioModChance = new CampaignOptionsSpinner("ScenarioModChance",
               25, 5, 100, 5);
         lblScenarioModBV = new CampaignOptionsLabel("ScenarioModBV");
@@ -554,6 +588,22 @@ public class RulesetsTab {
         layout.gridx = 0;
         layout.gridy = 0;
         layout.gridwidth = 1;
+        panel.add(chkClansObeyBiddingRules, layout);
+
+        layout.gridx = 0;
+        layout.gridy++;
+        panel.add(lblEnemyFacilityModifierDieSize, layout);
+        layout.gridx++;
+        panel.add(spnEnemyFacilityModifierDieSize, layout);
+
+        layout.gridx = 0;
+        layout.gridy++;
+        panel.add(lblAlliedFacilityModifierDieSize, layout);
+        layout.gridx++;
+        panel.add(spnAlliedFacilityModifierDieSize, layout);
+
+        layout.gridx = 0;
+        layout.gridy++;
         panel.add(lblScenarioModMax, layout);
         layout.gridx++;
         panel.add(spnScenarioModMax, layout);
@@ -814,6 +864,16 @@ public class RulesetsTab {
         chkUseNoTornadoes.addMouseListener(createTipPanelUpdater(stratConHeader, "UseNoTornadoes"));
         lblFixedMapChance.addMouseListener(createTipPanelUpdater(stratConHeader, "FixedMapChance"));
         spnFixedMapChance.addMouseListener(createTipPanelUpdater(stratConHeader, "FixedMapChance"));
+        chkClansObeyBiddingRules.addMouseListener(createTipPanelUpdater(stratConHeader,
+              "EnemyFacilityModifierDieSize"));
+        lblEnemyFacilityModifierDieSize.addMouseListener(createTipPanelUpdater(stratConHeader,
+              "EnemyFacilityModifierDieSize"));
+        spnEnemyFacilityModifierDieSize.addMouseListener(createTipPanelUpdater(stratConHeader,
+              "EnemyFacilityModifierDieSize"));
+        lblAlliedFacilityModifierDieSize.addMouseListener(createTipPanelUpdater(stratConHeader,
+              "AlliedFacilityModifierDieSize"));
+        spnAlliedFacilityModifierDieSize.addMouseListener(createTipPanelUpdater(stratConHeader,
+              "AlliedFacilityModifierDieSize"));
         lblScenarioModMax.addMouseListener(createTipPanelUpdater(stratConHeader, "ScenarioModMax"));
         spnScenarioModMax.addMouseListener(createTipPanelUpdater(stratConHeader, "ScenarioModMax"));
         lblScenarioModChance.addMouseListener(createTipPanelUpdater(stratConHeader, "ScenarioModChance"));
@@ -837,6 +897,10 @@ public class RulesetsTab {
               "PlayerControlsAttachedUnits"));
         chkUseAdvancedBuildingGunEmplacements.addMouseListener(createTipPanelUpdater(stratConHeader,
               "UseAdvancedBuildingGunEmplacements"));
+        lblReinforcementBaseTargetNumber.addMouseListener(createTipPanelUpdater(stratConHeader,
+              "ReinforcementBaseTargetNumber"));
+        spnReinforcementBaseTargetNumber.addMouseListener(createTipPanelUpdater(stratConHeader,
+              "ReinforcementBaseTargetNumber"));
         lblSPAUpgradeIntensity.addMouseListener(createTipPanelUpdater(stratConHeader, "SPAUpgradeIntensity"));
         spnSPAUpgradeIntensity.addMouseListener(createTipPanelUpdater(stratConHeader, "SPAUpgradeIntensity"));
         chkAutoConfigMunitions.addMouseListener(createTipPanelUpdater(stratConHeader, "AutoConfigMunitions"));
@@ -931,6 +995,7 @@ public class RulesetsTab {
      *
      * @return a {@link JPanel} containing all Legacy AtB settings.
      */
+    @Deprecated(since = "0.51.0", forRemoval = true)
     public JPanel createLegacyTab() {
         // Header
         legacyHeader = new CampaignOptionsHeaderPanel("LegacyTab",
@@ -979,8 +1044,12 @@ public class RulesetsTab {
         options.setAttachedPlayerCamouflage(chkAttachedPlayerCamouflage.isSelected());
         options.setPlayerControlsAttachedUnits(chkPlayerControlsAttachedUnits.isSelected());
         options.setUseAdvancedBuildingGunEmplacements(chkUseAdvancedBuildingGunEmplacements.isSelected());
+        options.setReinforcementBaseTargetNumber((int) spnReinforcementBaseTargetNumber.getValue());
         options.setSpaUpgradeIntensity((int) spnSPAUpgradeIntensity.getValue());
         options.setAutoConfigMunitions(chkAutoConfigMunitions.isSelected());
+        options.setClansObeyBiddingRules(chkClansObeyBiddingRules.isSelected());
+        options.setEnemyFacilityModifierDieSize((int) spnEnemyFacilityModifierDieSize.getValue());
+        options.setAlliedFacilityModifierDieSize((int) spnAlliedFacilityModifierDieSize.getValue());
         options.setScenarioModMax((int) spnScenarioModMax.getValue());
         options.setScenarioModChance((int) spnScenarioModChance.getValue());
         options.setScenarioModBV((int) spnScenarioModBV.getValue());
@@ -1044,8 +1113,12 @@ public class RulesetsTab {
         chkAttachedPlayerCamouflage.setSelected(options.isAttachedPlayerCamouflage());
         chkPlayerControlsAttachedUnits.setSelected(options.isPlayerControlsAttachedUnits());
         chkUseAdvancedBuildingGunEmplacements.setSelected(options.isUseAdvancedBuildingGunEmplacements());
+        spnReinforcementBaseTargetNumber.setValue(options.getReinforcementBaseTargetNumber());
         spnSPAUpgradeIntensity.setValue(options.getSpaUpgradeIntensity());
         chkAutoConfigMunitions.setSelected(options.isAutoConfigMunitions());
+        chkClansObeyBiddingRules.setSelected(options.isClansObeyBiddingRules());
+        spnEnemyFacilityModifierDieSize.setValue(options.getEnemyFacilityModifierDieSize());
+        spnAlliedFacilityModifierDieSize.setValue(options.getAlliedFacilityModifierDieSize());
         spnScenarioModMax.setValue(options.getScenarioModMax());
         spnScenarioModChance.setValue(options.getScenarioModChance());
         spnScenarioModBV.setValue(options.getScenarioModBV());

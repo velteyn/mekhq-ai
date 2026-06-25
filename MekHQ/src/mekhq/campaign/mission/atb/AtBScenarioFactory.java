@@ -101,7 +101,7 @@ public class AtBScenarioFactory {
             Random randomGenerator = new Random();
             selectedClass = classList.get(randomGenerator.nextInt(classList.size()));
         } else {
-            selectedClass = classList.get(0);
+            selectedClass = classList.getFirst();
         }
 
         try {
@@ -140,6 +140,10 @@ public class AtBScenarioFactory {
      * @param campaign the campaign for which to generate scenarios
      */
     public static void createScenariosForNewWeek(Campaign campaign) {
+        // StratCon's scenario generation is handled in StratConRulesManager, not here. Though we can't just filter
+        // StratCon campaigns out of this method, because StratCon does do some processing here, just not related to
+        // scenario generation.
+
         // First, we only want to generate if we have an active contract
         if (!campaign.hasActiveContract()) {
             return;
@@ -201,9 +205,13 @@ public class AtBScenarioFactory {
                 for (CombatTeam combatTeam : combatTeamsTable.values()) {
                     // Don't generate scenarios for any combatTeamsTable already assigned, those assigned to a
                     // different contract, those not assigned to a contract, or for illegible combatTeamsTable
-                    if (assignedLances.contains(combatTeam.getFormationId()) || (combatTeam.getContract(campaign) == null)
-                              || !combatTeam.isEligible(campaign) || (combatTeam.getMissionId() != contract.getId())
-                              || !combatTeam.getContract(campaign).isActiveOn(campaign.getLocalDate(), true)) {
+                    if (assignedLances.contains(combatTeam.getFormationId()) ||
+                              (combatTeam.getContract(campaign) == null)
+                              ||
+                              !combatTeam.isEligible(campaign) ||
+                              (combatTeam.getMissionId() != contract.getId())
+                              ||
+                              !combatTeam.getContract(campaign).isActiveOn(campaign.getLocalDate(), true)) {
                         continue;
                     }
 

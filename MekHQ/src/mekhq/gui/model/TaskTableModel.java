@@ -90,6 +90,7 @@ public class TaskTableModel extends DataTableModel<IPartWork> {
         return data.get(row);
     }
 
+    @Deprecated(since = "0.51.0", forRemoval = true)
     public IPartWork[] getTasksAt(int[] rows) {
         IPartWork[] tasks = new IPartWork[rows.length];
         for (int i = 0; i < rows.length; i++) {
@@ -136,10 +137,9 @@ public class TaskTableModel extends DataTableModel<IPartWork> {
             if (null != part.getTech()) {
                 availableLevel = REPAIR_STATE.SCHEDULED;
             } else {
-                if (part instanceof MissingPart) {
-                    if (!((MissingPart) part).isReplacementAvailable()) {
-                        PartInventory inventories = gui.getCampaign()
-                                                          .getPartInventory(((MissingPart) part).getNewPart());
+                if (part instanceof MissingPart missingPart) {
+                    if (!missingPart.isReplacementAvailable()) {
+                        PartInventory inventories = missingPart.getPartInventory(missingPart.getNewPart());
 
                         if ((inventories.getTransit() > 0) || (inventories.getOrdered() > 0)) {
                             availableLevel = REPAIR_STATE.IN_TRANSIT;
